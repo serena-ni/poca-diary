@@ -43,14 +43,6 @@ const QUESTS = [
     reward: { coins: 250 }
   },
   {
-    id: "rarity-fancam",
-    title: "Golden Hour",
-    description: "Get your first Fancam card",
-    type: "rarity",
-    rarity: "fancam",
-    reward: { coins: 375 }
-  },
-  {
     id: "rarity-legendary",
     title: "LEGENDARY!!!",
     description: "Get your first Legendary card",

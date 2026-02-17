@@ -126,7 +126,6 @@ function rollRarity() {
   if (roll <= 0.7) return "common";
   if (roll <= 0.9) return "rare";
   if (roll <= 0.97) return "holographic";
-  if (roll <= 0.995) return "fancam";
   return "legendary";
 }
 
@@ -135,7 +134,7 @@ function displayCard(idol) {
   card.classList.remove("loading");
   card.classList.add("bounce");
   
-  card.classList.remove("rarity-common", "rarity-rare", "rarity-holographic", "rarity-fancam", "rarity-legendary");
+  card.classList.remove("rarity-common", "rarity-rare", "rarity-holographic", "rarity-legendary");
   
   setTimeout(() => card.classList.remove("bounce"), 500);
 
@@ -152,7 +151,7 @@ function displayCard(idol) {
   
   card.classList.add(`rarity-${rarity}`);
   
-  if (rarity === 'legendary' || rarity === 'fancam') {
+  if (rarity === 'legendary') {
     showRarityMessage(rarity);
   }
   
@@ -213,8 +212,7 @@ function createConfetti() {
 
 function showRarityMessage(rarity) {
   const messages = {
-    'legendary': '★★★ legendary pull! ★★★',
-    'fancam': '☆ fancam! super rare! ☆'
+    'legendary': '★★★ legendary pull! ★★★'
   };
 
   if (!rarityStreakEl) {
@@ -237,10 +235,11 @@ function normalizeStageName(rawName) {
 
 function updateDiary() {
   const uniqueIdols = new Map();
-  const rarityOrder = ['legendary', 'fancam', 'holographic', 'rare', 'common'];
+  const rarityOrder = ['legendary', 'holographic', 'rare', 'common'];
 
   collection.forEach(item => {
-    const [rawTitle, rarity] = item.split("_");
+    const [rawTitle, rawRarity] = item.split("_");
+    const rarity = rawRarity === "fancam" ? "legendary" : rawRarity;
     const title = normalizeStageName(rawTitle);
     if (!uniqueIdols.has(title)) {
       uniqueIdols.set(title, { title, rarity });
