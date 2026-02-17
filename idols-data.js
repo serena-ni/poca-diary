@@ -437,7 +437,7 @@ const idolDatabase = [
     birthday: "1998-03-19",
     group: "LE SSERAFIM",
     subunit: null,
-    image: "",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMkhJ4EfOkkr2_f6hJwkVKCtiPzdHy5nHxQQ&s",
     color: "#ff8cc6"
   },
   {
@@ -446,7 +446,34 @@ const idolDatabase = [
     birthday: "2000-08-01",
     group: "LE SSERAFIM",
     subunit: null,
-    image: "",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzS6te2yPlyO1____37NECyVODORIJ4ND7Yw&s",
+    color: "#9c27b0"
+  },
+  {
+    stageName: "Yunjin",
+    realName: "Huh Yunjin",
+    birthday: "2001-10-08",
+    group: "LE SSERAFIM",
+    subunit: null,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZQBPMabjHO-aT_qhH6ClS0JVA5SlH3KA7zQ&s",
+    color: "#9c27b0"
+  },
+  {
+    stageName: "Kazuha",
+    realName: "Nakamura Kazuha",
+    birthday: "2003-08-09",
+    group: "LE SSERAFIM",
+    subunit: null,
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOXNl2YqHbk91c5CNO7H1grprPY5gTFQGbbg&s",
+    color: "#9c27b0"
+  },
+  {
+    stageName: "Eunchae",
+    realName: "Hong Eunchae",
+    birthday: "2006-11-10",
+    group: "LE SSERAFIM",
+    subunit: null,
+    image: "https://image.koreaboo.com/2025/05/250419-eunchae-2025-le-sserafim-tour-easy-crazy-hot-in-v0-t0257jg93dwe1.jpg",
     color: "#9c27b0"
   },
 
@@ -477,7 +504,7 @@ const idolDatabase = [
     birthday: "1994-09-12",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://m.media-amazon.com/images/M/MV5BNmUzYjVlYTUtNWEyMC00NjBlLTk0Y2UtZjhkY2EwMmY0ZjExXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
     color: "#1db954"
   },
   {
@@ -486,7 +513,7 @@ const idolDatabase = [
     birthday: "1992-12-04",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://www.billboard.com/wp-content/uploads/2022/10/jin-bts-the-astronaut-cr-bighit-music-2022-billboard-2-1548.jpg?w=942&h=628&crop=1",
     color: "#5aa9ff"
   },
   {
@@ -495,7 +522,7 @@ const idolDatabase = [
     birthday: "1993-03-09",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://www.musicmundial.com/en/wp-content/uploads/2022/03/BTS-Suga-reveals-lying-to-ARMY-about-his-health.jpg",
     color: "#ff4d6d"
   },
   {
@@ -504,7 +531,7 @@ const idolDatabase = [
     birthday: "1994-02-18",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://btsarchive.com/wp-content/uploads/2025/08/1741470045-image.png",
     color: "#ff8cc6"
   },
   {
@@ -513,7 +540,7 @@ const idolDatabase = [
     birthday: "1995-10-13",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://www.billboard.com/wp-content/uploads/media/Jimin-bts-press-photo-2017-billboard-1548.jpg",
     color: "#ffa500"
   },
   {
@@ -522,7 +549,7 @@ const idolDatabase = [
     birthday: "1995-12-30",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://assets.teenvogue.com/photos/5e95c549bc87b7000910f702/4:3/w_3712,h_2784,c_limit/GettyImages-1199371669.jpg",
     color: "#9d5fff"
   },
   {
@@ -531,7 +558,7 @@ const idolDatabase = [
     birthday: "1997-09-01",
     group: "BTS",
     subunit: null,
-    image: "",
+    image: "https://bangtanfacts.com/wp-content/uploads/2022/03/BTS-jungkook.webp",
     color: "#00bcd4"
   },
 
@@ -1156,7 +1183,7 @@ const idolDatabase = [
     birthday: "2001-06-13",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRvTMWtHgiz53huFpXfWHu_j43mhB3ZL-ySyQ&s",
     color: "#00ced1"
   },
   {
@@ -1165,7 +1192,7 @@ const idolDatabase = [
     birthday: "1998-12-14",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://www.asianjunkie.com/wp-content/uploads/2024/02/KimJiwoongZB1.jpg",
     color: "#ff6347"
   },
   {
@@ -1174,7 +1201,7 @@ const idolDatabase = [
     birthday: "2000-07-25",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://kpopsingers.com/wp-content/uploads/2023/10/Zhang-Hao-gallery-1-jpg.webp",
     color: "#4169e1"
   },
   {
@@ -1183,7 +1210,7 @@ const idolDatabase = [
     birthday: "2002-05-28",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://dispatch.cdnser.be/cms-content/uploads/2023/11/06/9cd0c11a-faf3-46cc-9b6c-17438e4d7048.jpg",
     color: "#1db954"
   },
   {
@@ -1192,7 +1219,7 @@ const idolDatabase = [
     birthday: "2002-07-14",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQF0ooee1O0_8LkdeqBDxQMyocJfvi67s2x_w&s",
     color: "#9d5fff"
   },
   {
@@ -1201,7 +1228,7 @@ const idolDatabase = [
     birthday: "2004-05-20",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://wallpapercave.com/wp/wp13980549.jpg",
     color: "#ffd700"
   },
   {
@@ -1210,7 +1237,7 @@ const idolDatabase = [
     birthday: "2004-08-30",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://external-preview.redd.it/zerobaseones-kim-gyu-vin-apologizes-for-his-choice-of-words-v0-YHAT8MnlGoLkymLpQgdQkL2E-vaozRkJpm5S9BsV1IY.jpg?width=640&crop=smart&auto=webp&s=ec1ac9c925b459d3a5fee17c78e0bf207e773785",
     color: "#4caf50"
   },
   {
@@ -1219,7 +1246,7 @@ const idolDatabase = [
     birthday: "2005-01-10",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://external-preview.redd.it/231008-zero-base-ones-park-gunwook-criticized-for-comments-v0-J-O7104LFCx6XcNtp0K4ZBYSBmXrkzqOL_1Xmx6rFSM.jpg?auto=webp&s=28073f56c132c4750d888e7eafc5f5606aafe916",
     color: "#ff9800"
   },
   {
@@ -1228,7 +1255,7 @@ const idolDatabase = [
     birthday: "2007-03-20",
     group: "ZEROBASEONE",
     subunit: null,
-    image: "",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi-IFVcVQrK-Fw4AcLThlwdOpjYy0zBAX6fw&s",
     color: "#e91e63"
   },
 
@@ -1239,7 +1266,7 @@ const idolDatabase = [
     birthday: "1993-05-16",
     group: "Soloist",
     subunit: null,
-    image: "",
+    image: "https://www.amny.com/wp-content/uploads/2024/07/IU-first-US-performance-at-the-Prudential-Center.-Photo-Credit-EDAM-Entertainment.jpg?resize=1200,798",
     color: "#ff69b4"
   },
   {
@@ -1248,7 +1275,7 @@ const idolDatabase = [
     birthday: "1989-03-09",
     group: "Soloist",
     subunit: null,
-    image: "",
+    image: "https://www.xtrafondos.com/wallpapers/taeyeon-cantante-de-kpop-4248.jpg",
     color: "#9d5fff"
   },
   {
@@ -1257,7 +1284,7 @@ const idolDatabase = [
     birthday: "1993-07-18",
     group: "SHINee",
     subunit: null,
-    image: "",
+    image: "https://www.nme.com/wp-content/uploads/2024/08/taemin-eternal-interview-main-image1.jpg",
     color: "#1db954"
   },
   {
@@ -1266,7 +1293,7 @@ const idolDatabase = [
     birthday: "1992-05-06",
     group: "EXO",
     subunit: null,
-    image: "",
+    image: "https://www.billboard.com/wp-content/uploads/2024/09/Baekhyun-Courtesy-of-INB100-2024-billboard-1548.jpg",
     color: "#ff8cc6"
   },
   {
@@ -1275,7 +1302,7 @@ const idolDatabase = [
     birthday: "1996-02-09",
     group: "Soloist",
     subunit: null,
-    image: "",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHP496x1ug83hB_8EhVcG9XuxK1n35bTuh7A&s",
     color: "#ffa500"
   },
   {
@@ -1284,7 +1311,7 @@ const idolDatabase = [
     birthday: "2001-03-09",
     group: "Soloist",
     subunit: null,
-    image: "",
+    image: "https://www.nme.com/wp-content/uploads/2021/08/somi-dumb-dumb-review-080421.jpg",
     color: "#ffd700"
   }
 ];

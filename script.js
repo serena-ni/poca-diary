@@ -25,6 +25,7 @@ const closeShopBtn = document.getElementById("closeShopBtn");
 const questContent = document.getElementById("questContent");
 const shopContent = document.getElementById("shopContent");
 const questNotification = document.getElementById("questNotification");
+const rarityStreakEl = document.getElementById("rarityStreak");
 
 const energyDisplay = document.getElementById("energyDisplay");
 const coinDisplay = document.getElementById("coinDisplay");
@@ -49,6 +50,16 @@ let completedAchievements = JSON.parse(localStorage.getItem("completedAchievemen
 
 const ENERGY_COST = 5;
 const ENERGY_REGEN_TIME = 30000; // 30 seconds per point
+const DIARY_PER_PAGE = 2;
+
+const STAGE_NAME_ALIASES = {
+  "tomorrow by together": "TXT",
+  "soo-bin": "Soobin",
+  "soobin": "Soobin",
+  "hueningkai": "Huening Kai",
+  "huening kai": "Huening Kai",
+  "winwin": "Winwin"
+};
 
 // ═══════════════════════════════════════════════════════════════
 // EVENT LISTENERS
@@ -128,15 +139,12 @@ function displayCard(idol) {
   card.classList.remove("loading");
   card.classList.add("bounce");
   
-  // Remove any existing rarity classes
   card.classList.remove("rarity-common", "rarity-rare", "rarity-holographic", "rarity-fancam", "rarity-legendary");
   
   setTimeout(() => card.classList.remove("bounce"), 500);
 
-  // Display stage name on top, real name below
   idolName.textContent = idol.stageName;
   
-  // Format birthday nicely
   const birthDate = new Date(idol.birthday);
   const formattedBirthday = birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   
@@ -166,20 +174,20 @@ function displayCard(idol) {
   }
 
   const imageSection = card.querySelector('.card-image-section');
-  idolImage.src = idol.image;
+  idolImage.src = "";
   idolImage.alt = idol.stageName;
-  
-  idolImage.onerror = function() {
-    imageSection.style.background = `linear-gradient(135deg, ${idol.color} 0%, ${idol.color}dd 100%)`;
-    imageSection.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; font-size: 48px; color: white; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); padding: 20px; text-align: center;">${idol.stageName}</div>`;
-  };
-  
-  idolImage.onload = function() {
-    if (imageSection.style.background) {
-      imageSection.style.background = '';
-      imageSection.innerHTML = `<img id="idolImage" alt="${idol.stageName}" src="${idol.image}">`;
-    }
-  };
+  idolImage.style.display = "none";
+
+  imageSection.style.background = `linear-gradient(135deg, ${idol.color} 0%, ${idol.color}dd 100%)`;
+
+  let fallbackName = imageSection.querySelector('.card-fallback-name');
+  if (!fallbackName) {
+    fallbackName = document.createElement('div');
+    fallbackName.className = 'card-fallback-name';
+    imageSection.appendChild(fallbackName);
+  }
+
+  fallbackName.textContent = idol.stageName;
 
   const spotifyLink = document.getElementById("spotifyLink");
   spotifyLink.href = `https://open.spotify.com/search/${encodeURIComponent(idol.stageName + " " + idol.group)}`;
@@ -213,22 +221,32 @@ function showRarityMessage(rarity) {
     'legendary': '★★★ legendary pull! ★★★',
     'fancam': '☆ fancam! super rare! ☆'
   };
-  
+
+  if (!rarityStreakEl) {
+    return;
+  }
+
   rarityStreakEl.textContent = messages[rarity] || '';
   rarityStreakEl.classList.remove('hidden');
-  
+
   setTimeout(() => {
     rarityStreakEl.classList.add('hidden');
   }, 3000);
 }
 
+function normalizeStageName(rawName) {
+  if (!rawName) return rawName;
+  const key = rawName.trim().toLowerCase();
+  return STAGE_NAME_ALIASES[key] || rawName.trim();
+}
+
 function updateDiary() {
-  const perPage = 2; 
   const uniqueIdols = new Map();
   const rarityOrder = ['legendary', 'fancam', 'holographic', 'rare', 'common'];
-  
+
   collection.forEach(item => {
-    const [title, rarity] = item.split("_");
+    const [rawTitle, rarity] = item.split("_");
+    const title = normalizeStageName(rawTitle);
     if (!uniqueIdols.has(title)) {
       uniqueIdols.set(title, { title, rarity });
     } else {
@@ -239,15 +257,17 @@ function updateDiary() {
     }
   });
   
-  const uniqueCards = Array.from(uniqueIdols.values());
-  const totalPages = Math.ceil(uniqueCards.length / perPage) || 1;
+  const uniqueCards = Array.from(uniqueIdols.values()).filter(item =>
+    idolDatabase.some(idol => idol.stageName.toLowerCase() === item.title.toLowerCase())
+  );
+  const totalPages = Math.ceil(uniqueCards.length / DIARY_PER_PAGE) || 1;
   
   if (currentPage >= totalPages) {
     currentPage = totalPages - 1;
   }
   
-  const start = currentPage * perPage;
-  const end = start + perPage;
+  const start = currentPage * DIARY_PER_PAGE;
+  const end = start + DIARY_PER_PAGE;
   const pageItems = uniqueCards.slice(start, end);
 
   pageLeft.innerHTML = "";
@@ -258,7 +278,16 @@ function updateDiary() {
 
   pageItems.forEach((item, i) => {
     const { title, rarity } = item;
-    const idol = idolDatabase.find(idol => idol.stageName === title);
+    const idol = idolDatabase.find(idol => idol.stageName === title)
+      || idolDatabase.find(idol => idol.stageName.toLowerCase() === title.toLowerCase());
+    const idolData = idol || {
+      stageName: title,
+      realName: "Unknown",
+      group: "Unknown",
+      birthday: "2000-01-01",
+      image: "",
+      color: "#9e9e9e"
+    };
     
     const cardSlot = document.createElement("div");
     cardSlot.className = `poca-slot poca-slot-full slot-${rarity}`;
@@ -266,13 +295,13 @@ function updateDiary() {
     const img = document.createElement("img");
     img.alt = title;
     
-    if (idol && idol.image) {
-      img.src = idol.image;
+    if (idolData.image) {
+      img.src = idolData.image;
       img.onerror = function() {
         this.style.display = 'none';
         const fallback = document.createElement('div');
-        fallback.style.cssText = `width: 100%; height: 200px; background: linear-gradient(135deg, ${idol.color} 0%, ${idol.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);`;
-        fallback.textContent = idol.stageName;
+        fallback.style.cssText = `width: 100%; height: 200px; background: linear-gradient(135deg, ${idolData.color} 0%, ${idolData.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);`;
+        fallback.textContent = idolData.stageName;
         this.parentNode.insertBefore(fallback, this);
       };
     }
@@ -280,10 +309,12 @@ function updateDiary() {
     const info = document.createElement("div");
     info.className = "poca-info";
     
-    const birthDate = new Date(idol.birthday);
-    const formattedBirthday = birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const birthDate = new Date(idolData.birthday);
+    const formattedBirthday = Number.isNaN(birthDate.getTime())
+      ? "Unknown"
+      : birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     
-    info.innerHTML = `<strong>${title}</strong><br><span class="idol-real-name">${idol.realName}</span><br><span class="mini-rarity">${rarity}</span><br><span class="idol-details">${idol.group} • ${formattedBirthday}</span>`;
+    info.innerHTML = `<strong>${idolData.stageName}</strong><br><span class="idol-real-name">${idolData.realName}</span><br><span class="mini-rarity">${rarity}</span><br><span class="idol-details">${idolData.group} • ${formattedBirthday}</span>`;
     
     cardSlot.appendChild(img);
     cardSlot.appendChild(info);
@@ -299,7 +330,7 @@ function updateDiary() {
 
 function flipPage(direction) {
   const uniqueIdols = new Set(collection.map(item => item.split("_")[0]));
-  const totalPages = Math.ceil(uniqueIdols.size / 4) || 1;
+  const totalPages = Math.ceil(uniqueIdols.size / DIARY_PER_PAGE) || 1;
   
   currentPage = (currentPage + direction + totalPages) % totalPages;
   
@@ -337,6 +368,14 @@ function updateEnergyRegen() {
   }
 }
 
+function isIdolInQuestGroup(member, quest) {
+  if (quest.subunit) {
+    const subunits = Array.isArray(member.subunit) ? member.subunit : [member.subunit];
+    return subunits.includes(quest.subunit);
+  }
+  return member.group === quest.group;
+}
+
 function checkAchievements(rarity, idol) {
   // Check milestone achievements
   const completedMilestones = QUESTS.filter(q => 
@@ -366,7 +405,7 @@ function checkAchievements(rarity, idol) {
   );
   
   completedCollections.forEach(quest => {
-    const groupMembers = idolDatabase.filter(i => i.group === quest.group);
+    const groupMembers = idolDatabase.filter(member => isIdolInQuestGroup(member, quest));
     const collectedMembers = groupMembers.filter(member => 
       collection.some(card => card.startsWith(member.stageName))
     );
