@@ -9,6 +9,13 @@ a little log of "photocards" (images of idols found online) consolidated
 - open your diary to view your collection - **ONE photocard per page!**
 - navigate between pages to see all collected cards
 
+## preview
+#### main page
+![main page](main.png)
+
+#### diary
+![diary view](diary.png)
+
 ## adding idols
 feel free to create a pull request and add any idols you'd like to see! (in `idols-data.js`)
 
