@@ -30,26 +30,21 @@ const rarityStreakEl = document.getElementById("rarityStreak");
 const energyDisplay = document.getElementById("energyDisplay");
 const coinDisplay = document.getElementById("coinDisplay");
 
-// ═══════════════════════════════════════════════════════════════
-// GAME STATE
-// ═══════════════════════════════════════════════════════════════
 let collection = JSON.parse(localStorage.getItem("pocaCollection")) || [];
 let currentPage = 0;
 let pullCount = parseInt(localStorage.getItem("pullCount")) || 0;
 let lastRarity = null;
 let isPulling = false;
 
-// Currency state
 let energy = parseInt(localStorage.getItem("energy")) || 50;
 let maxEnergy = 50;
 let coins = parseInt(localStorage.getItem("coins")) || 0;
 let lastEnergyTime = parseInt(localStorage.getItem("lastEnergyTime")) || Date.now();
 
-// Achievements
 let completedAchievements = JSON.parse(localStorage.getItem("completedAchievements")) || [];
 
 const ENERGY_COST = 5;
-const ENERGY_REGEN_TIME = 30000; // 30 seconds per point
+const ENERGY_REGEN_TIME = 30000;
 const DIARY_PER_PAGE = 2;
 
 const STAGE_NAME_ALIASES = {
@@ -61,9 +56,6 @@ const STAGE_NAME_ALIASES = {
   "winwin": "Winwin"
 };
 
-// ═══════════════════════════════════════════════════════════════
-// EVENT LISTENERS
-// ═══════════════════════════════════════════════════════════════
 pullBtn.addEventListener("click", pullCard);
 openDiaryBtn.addEventListener("click", () => {
   diaryWindow.classList.remove("hidden");
@@ -146,9 +138,7 @@ function displayCard(idol) {
   idolDesc.innerHTML = `<div style="line-height: 1.6;">${idol.realName}<br>group: ${idol.group}<br>born: ${formattedBirthday}</div>`;
 
   let rarity = rollRarity();
-  
   rarityText.textContent = rarity;
-  
   card.classList.add(`rarity-${rarity}`);
   
   if (rarity === 'legendary') {
@@ -334,9 +324,6 @@ function flipPage(direction) {
   
   updateDiary();
 }
-// ═══════════════════════════════════════════════════════════════
-// CURRENCY & ACHIEVEMENT SYSTEM
-// ═══════════════════════════════════════════════════════════════
 
 function updateCurrencyDisplay() {
   energyDisplay.textContent = `energy: ${energy}/${maxEnergy}`;
@@ -393,7 +380,6 @@ function checkAchievements(rarity, idol) {
     }
   });
   
-  // Check collection achievements
   const completedCollections = QUESTS.filter(q => 
     q.type === "collection" && !completedAchievements.includes(q.id)
   );
@@ -419,12 +405,10 @@ function completeAchievement(quest) {
   completedAchievements.push(quest.id);
   localStorage.setItem("completedAchievements", JSON.stringify(completedAchievements));
   
-  // Award currency
   coins += quest.reward.coins || 0;
   saveCurrencyData();
   updateCurrencyDisplay();
   
-  // Show notification
   showNotification(`${quest.title}! +${quest.reward.coins || 0} coins`);
 }
 
@@ -508,7 +492,6 @@ function renderShop() {
     let buyBtn = `<button class="shop-button" onclick="buyItem('${item.id}')">buy</button>`;
     let costDisplay = `<div class="shop-cost">${item.cost} ${item.currency}</div>`;
     
-    // Disable if not enough currency or daily cooldown
     if (item.id === "bonus-coins") {
       const now = Date.now();
       const today = Math.floor(now / (24 * 60 * 60 * 1000));
@@ -548,16 +531,13 @@ function buyItem(itemId) {
     return;
   }
   
-  // Check currency
   if (item.currency === "coins" && coins < item.cost) {
     showNotification("not enough coins");
     return;
   }
   
-  // Deduct cost
   if (item.currency === "coins") coins -= item.cost;
   
-  // Apply effect
   switch(item.effect) {
     case "buy_energy":
       energy = Math.min(energy + item.amount, maxEnergy);
