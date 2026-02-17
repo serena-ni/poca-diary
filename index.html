@@ -13,8 +13,13 @@
     <div class="window header">
       <div class="title-bar">poca diary.exe</div>
       <div class="stats-bar">
-        <span id="pullCount">pulls: 0</span>
-        <span id="rarityStreak" class="hidden"></span>
+        <span id="energyDisplay">energy: 25/50</span>
+        <span id="coinDisplay">coins: 0</span>
+      </div>
+      <div class="quest-bar">
+        <button id="openQuestsBtn" class="quest-btn">quests</button>
+        <button id="openShopBtn" class="quest-btn">shop</button>
+        <span id="questNotification" class="quest-notification"></span>
       </div>
     </div>
 
@@ -38,8 +43,26 @@
         <div class="new-badge hidden" id="newBadge">★ new ★</div>
       </div>
 
-      <button id="pullBtn">✦ open album ✦</button>
-      <button id="openDiaryBtn">✧ open diary ✧</button>
+      <button id="pullBtn">open album (5 energy)</button>
+      <button id="openDiaryBtn">open diary</button>
+    </div>
+
+    <div class="quest-overlay hidden" id="questWindow">
+      <div class="quest-panel">
+        <button class="close-btn" id="closeQuestsBtn">close</button>
+        <div class="quest-content" id="questContent">
+          <!-- Quests will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="quest-overlay hidden" id="shopWindow">
+      <div class="quest-panel">
+        <button class="close-btn" id="closeShopBtn">close</button>
+        <div class="shop-content" id="shopContent">
+          <!-- Shop will be populated here -->
+        </div>
+      </div>
     </div>
 
     <div class="diary-overlay hidden" id="diaryWindow">
@@ -63,6 +86,7 @@
   </div>
 
   <script src="idols-data.js"></script>
+  <script src="quests-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

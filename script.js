@@ -15,15 +15,44 @@ const nextPageBtn = document.getElementById("nextPageBtn");
 const closeDiaryBtn = document.getElementById("closeDiaryBtn");
 const collectionCount = document.getElementById("collectionCount");
 const pageIndicator = document.getElementById("pageIndicator");
-const pullCountEl = document.getElementById("pullCount");
-const rarityStreakEl = document.getElementById("rarityStreak");
 
+const openQuestsBtn = document.getElementById("openQuestsBtn");
+const openShopBtn = document.getElementById("openShopBtn");
+const questWindow = document.getElementById("questWindow");
+const shopWindow = document.getElementById("shopWindow");
+const closeQuestsBtn = document.getElementById("closeQuestsBtn");
+const closeShopBtn = document.getElementById("closeShopBtn");
+const questContent = document.getElementById("questContent");
+const shopContent = document.getElementById("shopContent");
+const questNotification = document.getElementById("questNotification");
+
+const energyDisplay = document.getElementById("energyDisplay");
+const coinDisplay = document.getElementById("coinDisplay");
+
+// ═══════════════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════════════
 let collection = JSON.parse(localStorage.getItem("pocaCollection")) || [];
 let currentPage = 0;
 let pullCount = parseInt(localStorage.getItem("pullCount")) || 0;
 let lastRarity = null;
 let isPulling = false;
 
+// Currency state
+let energy = parseInt(localStorage.getItem("energy")) || 50;
+let maxEnergy = 50;
+let coins = parseInt(localStorage.getItem("coins")) || 0;
+let lastEnergyTime = parseInt(localStorage.getItem("lastEnergyTime")) || Date.now();
+
+// Achievements
+let completedAchievements = JSON.parse(localStorage.getItem("completedAchievements")) || [];
+
+const ENERGY_COST = 5;
+const ENERGY_REGEN_TIME = 30000; // 30 seconds per point
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════════
 pullBtn.addEventListener("click", pullCard);
 openDiaryBtn.addEventListener("click", () => {
   diaryWindow.classList.remove("hidden");
@@ -33,18 +62,43 @@ closeDiaryBtn.addEventListener("click", () => diaryWindow.classList.add("hidden"
 prevPageBtn.addEventListener("click", () => flipPage(-1));
 nextPageBtn.addEventListener("click", () => flipPage(1));
 
-pullCountEl.textContent = `pulls: ${pullCount}`;
+openQuestsBtn.addEventListener("click", () => {
+  questWindow.classList.remove("hidden");
+  renderQuests();
+});
+closeQuestsBtn.addEventListener("click", () => questWindow.classList.add("hidden"));
+
+openShopBtn.addEventListener("click", () => {
+  shopWindow.classList.remove("hidden");
+  renderShop();
+});
+closeShopBtn.addEventListener("click", () => shopWindow.classList.add("hidden"));
+
+// Initialize display
+updateCurrencyDisplay();
+updateEnergyRegen();
+setInterval(updateEnergyRegen, 1000);
 
 function pullCard() {
-  if (isPulling) return; // prevent spam clicking
+  if (isPulling) return;
+  if (energy < ENERGY_COST) {
+    showNotification("not enough energy! " + Math.ceil((ENERGY_COST - energy) * 30) + "s");
+    return;
+  }
+  
   isPulling = true;
   pullBtn.disabled = true;
+  
+  // Deduct energy
+  energy -= ENERGY_COST;
+  lastEnergyTime = Date.now();
+  saveCurrencyData();
+  updateCurrencyDisplay();
   
   const randomIdol = idolDatabase[Math.floor(Math.random() * idolDatabase.length)];
   
   pullCount++;
   localStorage.setItem("pullCount", pullCount);
-  pullCountEl.textContent = `pulls: ${pullCount}`;
   
   card.classList.remove("hidden");
   card.classList.add("loading");
@@ -88,7 +142,8 @@ function displayCard(idol) {
   
   idolDesc.innerHTML = `<div style="line-height: 1.6;">${idol.realName}<br>group: ${idol.group}<br>born: ${formattedBirthday}</div>`;
 
-  const rarity = rollRarity();
+  let rarity = rollRarity();
+  
   rarityText.textContent = rarity;
   
   card.classList.add(`rarity-${rarity}`);
@@ -130,6 +185,9 @@ function displayCard(idol) {
   spotifyLink.href = `https://open.spotify.com/search/${encodeURIComponent(idol.stageName + " " + idol.group)}`;
   spotifyLink.classList.remove("hidden");
 
+  // Check achievements
+  checkAchievements(rarity, idol);
+  
   updateDiary();
   
   isPulling = false;
@@ -250,4 +308,229 @@ function flipPage(direction) {
   setTimeout(() => pages.classList.remove('flipping'), 400);
   
   updateDiary();
+}
+// ═══════════════════════════════════════════════════════════════
+// CURRENCY & ACHIEVEMENT SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+function updateCurrencyDisplay() {
+  energyDisplay.textContent = `energy: ${energy}/${maxEnergy}`;
+  coinDisplay.textContent = `coins: ${coins}`;
+}
+
+function saveCurrencyData() {
+  localStorage.setItem("energy", energy);
+  localStorage.setItem("coins", coins);
+  localStorage.setItem("lastEnergyTime", lastEnergyTime);
+}
+
+function updateEnergyRegen() {
+  const currentTime = Date.now();
+  const timeDelta = currentTime - lastEnergyTime;
+  const energyGain = Math.floor(timeDelta / ENERGY_REGEN_TIME);
+  
+  if (energyGain > 0 && energy < maxEnergy) {
+    energy = Math.min(energy + energyGain, maxEnergy);
+    lastEnergyTime = currentTime;
+    saveCurrencyData();
+    updateCurrencyDisplay();
+  }
+}
+
+function checkAchievements(rarity, idol) {
+  // Check milestone achievements
+  const completedMilestones = QUESTS.filter(q => 
+    q.type === "milestone" && !completedAchievements.includes(q.id)
+  );
+  
+  completedMilestones.forEach(quest => {
+    if (pullCount >= quest.target) {
+      completeAchievement(quest);
+    }
+  });
+  
+  // Check rarity achievements
+  const completedRarities = QUESTS.filter(q => 
+    q.type === "rarity" && !completedAchievements.includes(q.id)
+  );
+  
+  completedRarities.forEach(quest => {
+    if (rarity === quest.rarity) {
+      completeAchievement(quest);
+    }
+  });
+  
+  // Check collection achievements
+  const completedCollections = QUESTS.filter(q => 
+    q.type === "collection" && !completedAchievements.includes(q.id)
+  );
+  
+  completedCollections.forEach(quest => {
+    const groupMembers = idolDatabase.filter(i => i.group === quest.group);
+    const collectedMembers = groupMembers.filter(member => 
+      collection.some(card => card.startsWith(member.stageName))
+    );
+    if (collectedMembers.length === groupMembers.length) {
+      completeAchievement(quest);
+    }
+  });
+  
+  // Check special achievements
+  const luckyQuest = QUESTS.find(q => q.id === "lucky-7" && !completedAchievements.includes(q.id));
+  if (luckyQuest && pullCount === 7) {
+    completeAchievement(luckyQuest);
+  }
+}
+
+function completeAchievement(quest) {
+  completedAchievements.push(quest.id);
+  localStorage.setItem("completedAchievements", JSON.stringify(completedAchievements));
+  
+  // Award currency
+  coins += quest.reward.coins || 0;
+  saveCurrencyData();
+  updateCurrencyDisplay();
+  
+  // Show notification
+  showNotification(`${quest.title}! +${quest.reward.coins || 0} coins`);
+}
+
+function showNotification(message) {
+  questNotification.textContent = message;
+  questNotification.style.opacity = "1";
+  
+  setTimeout(() => {
+    questNotification.style.opacity = "0";
+  }, 4000);
+}
+
+function renderQuests() {
+  questContent.innerHTML = "";
+  
+  QUESTS.forEach(quest => {
+    const isCompleted = completedAchievements.includes(quest.id);
+    const questEl = document.createElement("div");
+    questEl.className = `quest-item ${isCompleted ? "completed" : ""}`;
+    
+    let progress = "";
+    if (quest.type === "milestone") {
+      const current = Math.min(pullCount, quest.target);
+      const percent = Math.floor((current / quest.target) * 100);
+      progress = `<div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div><div class="progress-text">${current}/${quest.target}</div>`;
+    }
+    
+    questEl.innerHTML = `
+      <div class="quest-info">
+        <div class="quest-title">${quest.title}</div>
+        <div class="quest-desc">${quest.description}</div>
+        ${progress}
+        <div class="quest-reward">
+          ${quest.reward.coins ? `${quest.reward.coins} coins` : ""}
+        </div>
+      </div>
+    `;
+    
+    questContent.appendChild(questEl);
+  });
+}
+
+const SHOP_ITEMS = [
+  {
+    id: "buy-1-pull",
+    name: "Buy 1 Pull",
+    description: "Add 5 energy for 1 pull",
+    cost: 30,
+    currency: "coins",
+    effect: "buy_energy",
+    amount: 5
+  },
+  {
+    id: "buy-5-pulls",
+    name: "Buy 5 Pulls",
+    description: "Add 25 energy (10% off)",
+    cost: 140,
+    currency: "coins",
+    effect: "buy_energy",
+    amount: 25
+  },
+  {
+    id: "bonus-coins",
+    name: "Daily Reward",
+    description: "Get 100 coins (1x/day)",
+    cost: 0,
+    currency: "free",
+    effect: "daily_bonus"
+  }
+];
+
+let lastDailyBonus = localStorage.getItem("lastDailyBonus") || 0;
+
+function renderShop() {
+  shopContent.innerHTML = "";
+  
+  SHOP_ITEMS.forEach(item => {
+    const shopItem = document.createElement("div");
+    shopItem.className = "shop-item";
+    
+    let buyBtn = `<button class="shop-button" onclick="buyItem('${item.id}')">buy</button>`;
+    let costDisplay = `<div class="shop-cost">${item.cost} ${item.currency}</div>`;
+    
+    // Disable if not enough currency or daily cooldown
+    if (item.id === "bonus-coins") {
+      const now = Date.now();
+      const today = Math.floor(now / (24 * 60 * 60 * 1000));
+      const lastDay = Math.floor(lastDailyBonus / (24 * 60 * 60 * 1000));
+      
+      if (today === lastDay) {
+        buyBtn = '<button class="shop-button" disabled>claimed</button>';
+        costDisplay = '<div class="shop-cost">back tomorrow</div>';
+      }
+    } else {
+      const hasEnough = coins >= item.cost;
+      if (!hasEnough) {
+        buyBtn = '<button class="shop-button" disabled>cant buy</button>';
+      }
+    }
+    
+    shopItem.innerHTML = `
+      <div class="shop-name">${item.name}</div>
+      <div class="shop-desc">${item.description}</div>
+      ${costDisplay}
+      ${buyBtn}
+    `;
+    
+    shopContent.appendChild(shopItem);
+  });
+}
+
+function buyItem(itemId) {
+  const item = SHOP_ITEMS.find(i => i.id === itemId);
+  if (!item) return;
+  
+  // Check currency
+  if (item.currency === "coins" && coins < item.cost) {
+    showNotification("not enough coins");
+    return;
+  }
+  
+  // Deduct cost
+  if (item.currency === "coins") coins -= item.cost;
+  
+  // Apply effect
+  switch(item.effect) {
+    case "buy_energy":
+      energy = Math.min(energy + item.amount, maxEnergy);
+      showNotification(`bought ${item.amount} energy`);
+      break;
+    case "daily_bonus":
+      coins += 100;
+      lastDailyBonus = Date.now();
+      localStorage.setItem("lastDailyBonus", lastDailyBonus);
+      showNotification("claimed 100 coins");
+      break;
+  }
+  
+  saveCurrencyData();
+  updateCurrencyDisplay();
+  renderShop();
 }
