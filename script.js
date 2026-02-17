@@ -85,7 +85,6 @@ openShopBtn.addEventListener("click", () => {
 });
 closeShopBtn.addEventListener("click", () => shopWindow.classList.add("hidden"));
 
-// Initialize display
 updateCurrencyDisplay();
 updateEnergyRegen();
 setInterval(updateEnergyRegen, 1000);
@@ -100,7 +99,6 @@ function pullCard() {
   isPulling = true;
   pullBtn.disabled = true;
   
-  // Deduct energy
   energy -= ENERGY_COST;
   lastEnergyTime = Date.now();
   saveCurrencyData();
@@ -122,8 +120,6 @@ function pullCard() {
   
   setTimeout(() => displayCard(randomIdol), 800);
 }
-
-
 
 function rollRarity() {
   const roll = Math.random();
@@ -193,7 +189,6 @@ function displayCard(idol) {
   spotifyLink.href = `https://open.spotify.com/search/${encodeURIComponent(idol.stageName + " " + idol.group)}`;
   spotifyLink.classList.remove("hidden");
 
-  // Check achievements
   checkAchievements(rarity, idol);
   
   updateDiary();
@@ -524,6 +519,9 @@ function renderShop() {
         buyBtn = '<button class="shop-button" disabled>claimed</button>';
         costDisplay = '<div class="shop-cost">back tomorrow</div>';
       }
+    } else if (item.effect === "buy_energy" && energy >= maxEnergy) {
+      buyBtn = '<button class="shop-button" disabled>full</button>';
+      costDisplay = '<div class="shop-cost">energy maxed</div>';
     } else {
       const hasEnough = coins >= item.cost;
       if (!hasEnough) {
@@ -545,6 +543,11 @@ function renderShop() {
 function buyItem(itemId) {
   const item = SHOP_ITEMS.find(i => i.id === itemId);
   if (!item) return;
+
+  if (item.effect === "buy_energy" && energy >= maxEnergy) {
+    showNotification("energy already full");
+    return;
+  }
   
   // Check currency
   if (item.currency === "coins" && coins < item.cost) {
