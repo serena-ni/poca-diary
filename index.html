@@ -4,31 +4,65 @@
   <meta charset="UTF-8" />
   <title>poca diary</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
 
   <div class="app">
 
     <div class="window header">
-      <div class="title-bar">poca diary.exe</div>
+      <div class="title-bar">♥ poca diary.exe ♥</div>
+      <div class="stats-bar">
+        <span id="pullCount">pulls: 0</span>
+        <span id="rarityStreak" class="hidden"></span>
+      </div>
     </div>
 
     <div class="window card-window">
       <div class="title-bar">album pull</div>
 
       <div class="card hidden" id="card">
-        <img id="idolImage" />
-        <h2 id="idolName"></h2>
-        <p id="idolDesc"></p>
-        <div class="rarity" id="rarity"></div>
-        <div class="new-badge hidden" id="newBadge">new</div>
+        <div class="card-content">
+          <div class="card-image-section">
+            <img id="idolImage" />
+          </div>
+          <div class="card-info-section">
+            <h2 id="idolName"></h2>
+            <p id="idolDesc"></p>
+            <div class="rarity" id="rarity"></div>
+          </div>
+        </div>
+        <a id="spotifyLink" class="spotify-bar hidden" target="_blank">
+          ♫ listen on spotify
+        </a>
+        <div class="new-badge hidden" id="newBadge">★ new ★</div>
       </div>
 
-      <button id="pullBtn">open album</button>
+      <button id="pullBtn">✦ open album ✦</button>
+      <button id="openDiaryBtn">✧ open diary ✧</button>
+    </div>
+
+    <div class="diary-overlay hidden" id="diaryWindow">
+      <div class="diary-window">
+        <div class="diary-header">
+          <div class="collection-count" id="collectionCount">collection: 0/∞</div>
+          <button class="close-btn" id="closeDiaryBtn">✕</button>
+        </div>
+        <div class="book">
+          <button id="prevPageBtn">◀</button>
+          <div class="pages">
+            <div class="page left" id="pageLeft"></div>
+            <div class="page right" id="pageRight"></div>
+          </div>
+          <button id="nextPageBtn">▶</button>
+        </div>
+        <div class="page-indicator" id="pageIndicator">page 1</div>
+      </div>
     </div>
 
   </div>
 
+  <script src="idols-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
