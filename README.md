@@ -10,7 +10,7 @@ a little log of "photocards" (images of idols found online) consolidated
 - navigate between pages to see all collected cards
 
 ## adding idols
-feel free to create a pull request and add any idols you'd like to see!
+feel free to create a pull request and add any idols you'd like to see! (in `idols-data.js`)
 
 ---
 
