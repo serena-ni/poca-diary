@@ -883,7 +883,7 @@ function shuffleArray(array) {
 function renderMemoryStage() {
   minigamePlay.innerHTML = `
     <div class="minigame-title">memory stage</div>
-    <div class="minigame-subtitle">match all pairs before the crowd fades.</div>
+    <div class="minigame-subtitle">match all pairs.</div>
     <div class="memory-actions">
       <button id="memoryStartBtn">start round</button>
     </div>
