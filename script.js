@@ -27,6 +27,12 @@ const shopContent = document.getElementById("shopContent");
 const questNotification = document.getElementById("questNotification");
 const rarityStreakEl = document.getElementById("rarityStreak");
 
+const openMinigamesBtn = document.getElementById("openMinigamesBtn");
+const minigameWindow = document.getElementById("minigameWindow");
+const closeMinigamesBtn = document.getElementById("closeMinigamesBtn");
+const minigameList = document.getElementById("minigameList");
+const minigamePlay = document.getElementById("minigamePlay");
+
 const energyDisplay = document.getElementById("energyDisplay");
 const coinDisplay = document.getElementById("coinDisplay");
 
@@ -46,6 +52,49 @@ let completedAchievements = JSON.parse(localStorage.getItem("completedAchievemen
 const ENERGY_COST = 5;
 const ENERGY_REGEN_TIME = 30000;
 const DIARY_PER_PAGE = 2;
+
+const MINIGAMES = [
+  {
+    id: "beat-drop",
+    name: "beat drop",
+    description: "stop the beat in the spotlight zone",
+    cost: 3
+  },
+  {
+    id: "lyric-scramble",
+    name: "lyric scramble",
+    description: "build the line from shuffled words",
+    cost: 2
+  },
+  {
+    id: "memory-stage",
+    name: "memory stage",
+    description: "match the stage cards to win coins",
+    cost: 4
+  }
+];
+
+const SCRAMBLE_LINES = [
+  "neon glow over the stage",
+  "heartbeat rides the bassline",
+  "hands up under moonlight",
+  "we dance past the skyline",
+  "spotlight paints our silhouettes",
+  "echoes chase the midnight"
+];
+
+const MEMORY_WORDS = [
+  "beat",
+  "glow",
+  "stage",
+  "vibe",
+  "pulse",
+  "shine",
+  "crowd",
+  "echo",
+  "spark",
+  "tempo"
+];
 
 const STAGE_NAME_ALIASES = {
   "tomorrow by together": "TXT",
@@ -76,6 +125,16 @@ openShopBtn.addEventListener("click", () => {
   renderShop();
 });
 closeShopBtn.addEventListener("click", () => shopWindow.classList.add("hidden"));
+
+openMinigamesBtn.addEventListener("click", () => {
+  minigameWindow.classList.remove("hidden");
+  renderMinigameList();
+  selectMinigame(activeMinigameId || MINIGAMES[0].id);
+});
+closeMinigamesBtn.addEventListener("click", () => {
+  cleanupMinigame();
+  minigameWindow.classList.add("hidden");
+});
 
 updateCurrencyDisplay();
 updateEnergyRegen();
@@ -482,6 +541,14 @@ const SHOP_ITEMS = [
 
 let lastDailyBonus = localStorage.getItem("lastDailyBonus") || 0;
 
+let activeMinigameId = null;
+let beatIntervalId = null;
+let beatPosition = 0;
+let beatDirection = 1;
+let scrambleState = null;
+let memoryState = null;
+let memoryTimeoutId = null;
+
 function renderShop() {
   shopContent.innerHTML = "";
   
@@ -554,4 +621,380 @@ function buyItem(itemId) {
   saveCurrencyData();
   updateCurrencyDisplay();
   renderShop();
+}
+
+function renderMinigameList() {
+  minigameList.innerHTML = "";
+
+  MINIGAMES.forEach(game => {
+    const btn = document.createElement("button");
+    btn.className = `minigame-card ${activeMinigameId === game.id ? "active" : ""}`;
+    btn.innerHTML = `
+      <div class="minigame-name">${game.name}</div>
+      <div class="minigame-desc">${game.description}</div>
+      <div class="minigame-cost">cost: ${game.cost} energy</div>
+    `;
+    btn.addEventListener("click", () => selectMinigame(game.id));
+    minigameList.appendChild(btn);
+  });
+}
+
+function selectMinigame(gameId) {
+  cleanupMinigame();
+  activeMinigameId = gameId;
+  renderMinigameList();
+
+  if (gameId === "beat-drop") {
+    renderBeatDrop();
+    return;
+  }
+
+  if (gameId === "lyric-scramble") {
+    renderLyricScramble();
+    return;
+  }
+
+  if (gameId === "memory-stage") {
+    renderMemoryStage();
+  }
+}
+
+function cleanupMinigame() {
+  if (beatIntervalId) {
+    clearInterval(beatIntervalId);
+    beatIntervalId = null;
+  }
+  if (memoryTimeoutId) {
+    clearTimeout(memoryTimeoutId);
+    memoryTimeoutId = null;
+  }
+  scrambleState = null;
+  memoryState = null;
+}
+
+function renderBeatDrop() {
+  minigamePlay.innerHTML = `
+    <div class="minigame-title">beat drop</div>
+    <div class="minigame-subtitle">stop the marker inside the spotlight zone to earn coins.</div>
+    <div class="beat-meter">
+      <div class="beat-target"></div>
+      <div class="beat-indicator" id="beatIndicator"></div>
+    </div>
+    <div class="beat-actions">
+      <button id="beatStartBtn">start</button>
+      <button id="beatStopBtn" disabled>stop</button>
+    </div>
+    <div class="beat-result" id="beatResult">cost: 3 energy per round</div>
+  `;
+
+  const beatIndicator = document.getElementById("beatIndicator");
+  const beatStartBtn = document.getElementById("beatStartBtn");
+  const beatStopBtn = document.getElementById("beatStopBtn");
+  const beatResult = document.getElementById("beatResult");
+
+  beatPosition = 0;
+  beatDirection = 1;
+  beatIndicator.style.left = "0%";
+
+  beatStartBtn.addEventListener("click", () => {
+    if (beatIntervalId) return;
+    const cost = MINIGAMES.find(game => game.id === "beat-drop").cost;
+    if (energy < cost) {
+      showNotification("not enough energy");
+      return;
+    }
+
+    energy -= cost;
+    saveCurrencyData();
+    updateCurrencyDisplay();
+
+    beatResult.textContent = "focus...";
+    beatStartBtn.disabled = true;
+    beatStopBtn.disabled = false;
+
+    beatIntervalId = setInterval(() => {
+      beatPosition += beatDirection * 1.6;
+      if (beatPosition >= 100) {
+        beatPosition = 100;
+        beatDirection = -1;
+      }
+      if (beatPosition <= 0) {
+        beatPosition = 0;
+        beatDirection = 1;
+      }
+      beatIndicator.style.left = `${beatPosition}%`;
+    }, 18);
+  });
+
+  beatStopBtn.addEventListener("click", () => {
+    if (!beatIntervalId) return;
+    clearInterval(beatIntervalId);
+    beatIntervalId = null;
+    beatStartBtn.disabled = false;
+    beatStopBtn.disabled = true;
+
+    const distance = Math.abs(beatPosition - 50);
+    const reward = getBeatReward(distance);
+    beatResult.textContent = `${reward.label} (+${reward.coins} coins)`;
+
+    if (reward.coins > 0) {
+      coins += reward.coins;
+      saveCurrencyData();
+      updateCurrencyDisplay();
+    }
+  });
+}
+
+function getBeatReward(distance) {
+  if (distance <= 4) return { label: "perfect", coins: 30 };
+  if (distance <= 10) return { label: "clean", coins: 18 };
+  if (distance <= 18) return { label: "ok", coins: 8 };
+  return { label: "miss", coins: 0 };
+}
+
+function renderLyricScramble() {
+  minigamePlay.innerHTML = `
+    <div class="minigame-title">lyric scramble</div>
+    <div class="minigame-subtitle">tap words to rebuild the line.</div>
+    <div class="scramble-actions">
+      <button id="scrambleStartBtn">start round</button>
+      <button id="scrambleCheckBtn" disabled>check</button>
+      <button id="scrambleResetBtn" disabled>reset</button>
+      <button id="scrambleNewBtn" disabled>new line</button>
+    </div>
+    <div class="scramble-target" id="scrambleTarget">cost: 2 energy per round</div>
+    <div class="scramble-word-bank" id="scrambleBank"></div>
+    <div class="scramble-result" id="scrambleResult"></div>
+  `;
+
+  const scrambleStartBtn = document.getElementById("scrambleStartBtn");
+  const scrambleCheckBtn = document.getElementById("scrambleCheckBtn");
+  const scrambleResetBtn = document.getElementById("scrambleResetBtn");
+  const scrambleNewBtn = document.getElementById("scrambleNewBtn");
+
+  scrambleStartBtn.addEventListener("click", () => {
+    startScrambleRound();
+    scrambleCheckBtn.disabled = false;
+    scrambleResetBtn.disabled = false;
+    scrambleNewBtn.disabled = false;
+  });
+
+  scrambleCheckBtn.addEventListener("click", () => checkScrambleAnswer());
+  scrambleResetBtn.addEventListener("click", () => resetScrambleAnswer());
+  scrambleNewBtn.addEventListener("click", () => startScrambleRound());
+}
+
+function startScrambleRound() {
+  const cost = MINIGAMES.find(game => game.id === "lyric-scramble").cost;
+  if (energy < cost) {
+    showNotification("not enough energy");
+    return;
+  }
+
+  energy -= cost;
+  saveCurrencyData();
+  updateCurrencyDisplay();
+
+  const phrase = SCRAMBLE_LINES[Math.floor(Math.random() * SCRAMBLE_LINES.length)];
+  const words = phrase.split(" ");
+  const shuffled = shuffleArray([...words]);
+
+  scrambleState = {
+    phrase,
+    words,
+    bank: shuffled,
+    answer: [],
+    solved: false
+  };
+
+  renderScrambleUI();
+}
+
+function renderScrambleUI() {
+  const scrambleTarget = document.getElementById("scrambleTarget");
+  const scrambleBank = document.getElementById("scrambleBank");
+  const scrambleResult = document.getElementById("scrambleResult");
+
+  scrambleTarget.innerHTML = "";
+  scrambleBank.innerHTML = "";
+  scrambleResult.textContent = "";
+
+  scrambleState.answer.forEach((word, index) => {
+    const wordBtn = document.createElement("button");
+    wordBtn.className = "scramble-word";
+    wordBtn.textContent = word;
+    wordBtn.addEventListener("click", () => {
+      scrambleState.answer.splice(index, 1);
+      scrambleState.bank.push(word);
+      renderScrambleUI();
+    });
+    scrambleTarget.appendChild(wordBtn);
+  });
+
+  if (scrambleState.answer.length === 0) {
+    scrambleTarget.textContent = "build the line here";
+  }
+
+  scrambleState.bank.forEach((word, index) => {
+    const wordBtn = document.createElement("button");
+    wordBtn.className = "scramble-word bank";
+    wordBtn.textContent = word;
+    wordBtn.addEventListener("click", () => {
+      scrambleState.bank.splice(index, 1);
+      scrambleState.answer.push(word);
+      renderScrambleUI();
+    });
+    scrambleBank.appendChild(wordBtn);
+  });
+}
+
+function resetScrambleAnswer() {
+  if (!scrambleState) return;
+  scrambleState.bank = scrambleState.bank.concat(scrambleState.answer);
+  scrambleState.answer = [];
+  renderScrambleUI();
+}
+
+function checkScrambleAnswer() {
+  if (!scrambleState || scrambleState.solved) return;
+
+  const scrambleResult = document.getElementById("scrambleResult");
+  const answerText = scrambleState.answer.join(" ");
+
+  if (answerText === scrambleState.phrase) {
+    scrambleState.solved = true;
+    coins += 20;
+    saveCurrencyData();
+    updateCurrencyDisplay();
+    scrambleResult.textContent = "clean line! +20 coins";
+  } else {
+    scrambleResult.textContent = "not quite. shuffle and try again";
+  }
+}
+
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function renderMemoryStage() {
+  minigamePlay.innerHTML = `
+    <div class="minigame-title">memory stage</div>
+    <div class="minigame-subtitle">match all pairs before the crowd fades.</div>
+    <div class="memory-actions">
+      <button id="memoryStartBtn">start round</button>
+    </div>
+    <div class="memory-status" id="memoryStatus">cost: 4 energy per round</div>
+    <div class="memory-grid" id="memoryGrid"></div>
+  `;
+
+  const memoryStartBtn = document.getElementById("memoryStartBtn");
+  memoryStartBtn.addEventListener("click", () => startMemoryRound());
+}
+
+function startMemoryRound() {
+  const cost = MINIGAMES.find(game => game.id === "memory-stage").cost;
+  if (energy < cost) {
+    showNotification("not enough energy");
+    return;
+  }
+
+  energy -= cost;
+  saveCurrencyData();
+  updateCurrencyDisplay();
+
+  const selected = shuffleArray([...MEMORY_WORDS]).slice(0, 4);
+  const deck = shuffleArray([...selected, ...selected]).map(value => ({
+    value,
+    matched: false
+  }));
+
+  memoryState = {
+    deck,
+    revealed: [],
+    attempts: 0,
+    locked: false
+  };
+
+  updateMemoryStatus("find all pairs");
+  renderMemoryGrid();
+}
+
+function renderMemoryGrid() {
+  const memoryGrid = document.getElementById("memoryGrid");
+  if (!memoryGrid || !memoryState) return;
+
+  memoryGrid.innerHTML = "";
+
+  memoryState.deck.forEach((card, index) => {
+    const button = document.createElement("button");
+    button.className = "memory-card";
+
+    const isRevealed = memoryState.revealed.includes(index) || card.matched;
+    button.textContent = isRevealed ? card.value : "??";
+    button.dataset.index = index;
+    button.disabled = card.matched || memoryState.locked;
+
+    if (card.matched) {
+      button.classList.add("matched");
+    }
+    if (memoryState.revealed.includes(index)) {
+      button.classList.add("revealed");
+    }
+
+    button.addEventListener("click", () => handleMemoryFlip(index));
+    memoryGrid.appendChild(button);
+  });
+}
+
+function handleMemoryFlip(index) {
+  if (!memoryState || memoryState.locked) return;
+  if (memoryState.revealed.includes(index)) return;
+  if (memoryState.deck[index].matched) return;
+
+  memoryState.revealed.push(index);
+  renderMemoryGrid();
+
+  if (memoryState.revealed.length < 2) return;
+
+  const [first, second] = memoryState.revealed;
+  const firstCard = memoryState.deck[first];
+  const secondCard = memoryState.deck[second];
+  memoryState.attempts += 1;
+
+  if (firstCard.value === secondCard.value) {
+    firstCard.matched = true;
+    secondCard.matched = true;
+    memoryState.revealed = [];
+    updateMemoryStatus("pair found!");
+    renderMemoryGrid();
+
+    if (memoryState.deck.every(card => card.matched)) {
+      const reward = Math.max(8, 30 - memoryState.attempts * 2);
+      coins += reward;
+      saveCurrencyData();
+      updateCurrencyDisplay();
+      updateMemoryStatus(`stage cleared! +${reward} coins`);
+    }
+    return;
+  }
+
+  memoryState.locked = true;
+  updateMemoryStatus("no match, try again");
+  renderMemoryGrid();
+
+  memoryTimeoutId = setTimeout(() => {
+    memoryState.revealed = [];
+    memoryState.locked = false;
+    renderMemoryGrid();
+  }, 650);
+}
+
+function updateMemoryStatus(message) {
+  const memoryStatus = document.getElementById("memoryStatus");
+  if (!memoryStatus) return;
+  memoryStatus.textContent = message;
 }
