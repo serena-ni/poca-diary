@@ -5,7 +5,6 @@
   <title>poca diary</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
 
@@ -22,6 +21,7 @@
         <button id="openQuestsBtn" class="quest-btn">quests</button>
         <button id="openShopBtn" class="quest-btn">shop</button>
         <button id="openMinigamesBtn" class="quest-btn">minigames</button>
+        <button id="openSettingsBtn" class="quest-btn">settings</button>
         <span id="questNotification" class="quest-notification"></span>
       </div>
     </div>
@@ -52,7 +52,10 @@
 
     <div class="quest-overlay hidden" id="questWindow">
       <div class="quest-panel">
-        <button class="close-btn" id="closeQuestsBtn">close</button>
+        <div class="modal-header">
+          <h3>quests</h3>
+          <button class="close-btn" id="closeQuestsBtn">✕</button>
+        </div>
         <div class="quest-content" id="questContent">
         </div>
       </div>
@@ -60,7 +63,10 @@
 
     <div class="quest-overlay hidden" id="shopWindow">
       <div class="quest-panel">
-        <button class="close-btn" id="closeShopBtn">close</button>
+        <div class="modal-header">
+          <h3>shop</h3>
+          <button class="close-btn" id="closeShopBtn">✕</button>
+        </div>
         <div class="shop-content" id="shopContent">
         </div>
       </div>
@@ -68,8 +74,11 @@
 
     <div class="quest-overlay hidden" id="minigameWindow">
       <div class="quest-panel minigame-panel">
-        <button class="close-btn" id="closeMinigamesBtn">close</button>
-        <div class="minigame-layout flex flex-col lg:flex-row gap-4">
+        <div class="modal-header">
+          <h3>minigames</h3>
+          <button class="close-btn" id="closeMinigamesBtn">✕</button>
+        </div>
+        <div class="minigame-layout">
           <div class="minigame-list" id="minigameList"></div>
           <div class="minigame-play" id="minigamePlay"></div>
         </div>
@@ -80,6 +89,7 @@
       <div class="diary-window">
         <div class="diary-header">
           <div class="collection-count" id="collectionCount">collection: 0/0</div>
+          <input type="text" id="diarySearch" placeholder="search by name..." class="diary-search">
           <button class="close-btn" id="closeDiaryBtn">✕</button>
         </div>
         <div class="book">
@@ -91,6 +101,44 @@
           <button id="nextPageBtn">▶</button>
         </div>
         <div class="page-indicator" id="pageIndicator">page 1</div>
+      </div>
+    </div>
+
+    <div class="quest-overlay hidden" id="confirmPullWindow">
+      <div class="quest-panel">
+        <div class="modal-header">
+          <h3>confirm pull?</h3>
+          <button class="close-btn" id="cancelPullBtn">✕</button>
+        </div>
+        <p>costs <span id="costDisplay">5</span> energy</p>
+        <div class="button-group">
+          <button id="confirmPullBtn" class="confirm-btn">yes, pull</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="quest-overlay hidden" id="settingsWindow">
+      <div class="quest-panel">
+        <div class="modal-header">
+          <h3>settings</h3>
+          <button class="close-btn" id="closeSettingsBtn">✕</button>
+        </div>
+        <div class="settings-content">
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="animationToggle"> animations
+            </label>
+          </div>
+          <div class="setting-group">
+            <h4>save data</h4>
+            <p id="saveDataInfo">pulls: 0, cards collected: 0, coins: 0</p>
+            <p class="setting-hint">export save as backup (json file)</p>
+            <button id="exportSaveBtn" class="save-btn">export save</button>
+            <button id="importSaveBtn" class="save-btn">load save file</button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+            <button id="deleteSaveBtn" class="delete-btn">delete save</button>
+          </div>
+        </div>
       </div>
     </div>
 

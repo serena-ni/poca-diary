@@ -1,6 +1,3 @@
-// ============================================
-// UI ELEMENTS - Initialize on DOM ready
-// ============================================
 let UI = {};
 
 function initializeUI() {
@@ -15,6 +12,7 @@ function initializeUI() {
     
     openDiaryBtn: document.getElementById("openDiaryBtn"),
     diaryWindow: document.getElementById("diaryWindow"),
+    diarySearch: document.getElementById("diarySearch"),
     pageLeft: document.getElementById("pageLeft"),
     pageRight: document.getElementById("pageRight"),
     prevPageBtn: document.getElementById("prevPageBtn"),
@@ -25,10 +23,14 @@ function initializeUI() {
     
     openQuestsBtn: document.getElementById("openQuestsBtn"),
     openShopBtn: document.getElementById("openShopBtn"),
+    openSettingsBtn: document.getElementById("openSettingsBtn"),
     questWindow: document.getElementById("questWindow"),
     shopWindow: document.getElementById("shopWindow"),
+    settingsWindow: document.getElementById("settingsWindow"),
+    confirmPullWindow: document.getElementById("confirmPullWindow"),
     closeQuestsBtn: document.getElementById("closeQuestsBtn"),
     closeShopBtn: document.getElementById("closeShopBtn"),
+    closeSettingsBtn: document.getElementById("closeSettingsBtn"),
     questContent: document.getElementById("questContent"),
     shopContent: document.getElementById("shopContent"),
     questNotification: document.getElementById("questNotification"),
@@ -41,23 +43,43 @@ function initializeUI() {
     minigamePlay: document.getElementById("minigamePlay"),
     
     energyDisplay: document.getElementById("energyDisplay"),
-    coinDisplay: document.getElementById("coinDisplay")
+    coinDisplay: document.getElementById("coinDisplay"),
+    
+    animationToggle: document.getElementById("animationToggle"),
+    saveDataInfo: document.getElementById("saveDataInfo"),
+    exportSaveBtn: document.getElementById("exportSaveBtn"),
+    importSaveBtn: document.getElementById("importSaveBtn"),
+    importFileInput: document.getElementById("importFileInput"),
+    deleteSaveBtn: document.getElementById("deleteSaveBtn"),
+    
+    confirmPullBtn: document.getElementById("confirmPullBtn"),
+    cancelPullBtn: document.getElementById("cancelPullBtn"),
+    costDisplay: document.getElementById("costDisplay")
   };
 }
 
-// ============================================
-// GAME CONFIG
-// ============================================
 const CONFIG = {
   ENERGY_COST: 5,
   ENERGY_REGEN_TIME: 30000,
   ENERGY_REGEN_AMOUNT: 1,
   MAX_ENERGY: 50,
+  
   DIARY_PER_PAGE: 2,
-  PITY_THRESHOLD: 50  // legendary guaranteed after this many pulls
+  PITY_THRESHOLD: 50,
+  DUPLICATE_PROTECTION: 30,
+  PULL_ANIMATION_DURATION: 800,
+  MEMORY_FLIP_TIMEOUT: 650,
+  MEMORY_REWARD_BASE: 30,
+  
+  DAILY_BONUS_COINS: 100,
+  DAILY_BONUS_ENERGY: 5,
+  
+  QUEST_COOLDOWN_MS: 3600000,
+  
+  EVENT_CARDS_AVAILABLE: true,
+  EVENT_END_DATE: "2026-03-31"
 };
 
-// Rarity thresholds
 const RARITY_RATES = {
   COMMON: 0.70,
   RARE: 0.90,
@@ -65,44 +87,95 @@ const RARITY_RATES = {
   LEGENDARY: 1.0
 };
 
-// ============================================
-// GAME STATE
-// ============================================
+function safeJsonParse(jsonString, fallback) {
+  try {
+    if (!jsonString) return fallback;
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('JSON parse error:', error);
+    return fallback;
+  }
+}
+
+function safeSetLocalStorage(key, value) {
+  try {
+    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+    localStorage.setItem(key, stringValue);
+    return true;
+  } catch (error) {
+    console.error('localStorage error:', error);
+    if (error.name === 'QuotaExceededError') {
+      showNotification('save data full! delete old saves.');
+    }
+    return false;
+  }
+}
+
 const gameState = {
-  collection: JSON.parse(localStorage.getItem("pocaCollection")) || [],
+  collection: safeJsonParse(localStorage.getItem("pocaCollection"), []),
   pullCount: parseInt(localStorage.getItem("pullCount")) || 0,
   pityCounter: parseInt(localStorage.getItem("pityCounter")) || 0,
   lastRarity: null,
   isPulling: false,
   currentPage: 0,
+  diarySearchQuery: "",
   
   energy: parseInt(localStorage.getItem("energy")) || CONFIG.MAX_ENERGY,
   coins: parseInt(localStorage.getItem("coins")) || 0,
   lastEnergyTime: parseInt(localStorage.getItem("lastEnergyTime")) || Date.now(),
   energyDirty: false,
   
-  completedAchievements: JSON.parse(localStorage.getItem("completedAchievements")) || [],
-  lastDailyBonus: parseInt(localStorage.getItem("lastDailyBonus")) || 0
+  completedAchievements: safeJsonParse(localStorage.getItem("completedAchievements"), []),
+  lastDailyBonus: parseInt(localStorage.getItem("lastDailyBonus")) || 0,
+  lastQuestRefresh: parseInt(localStorage.getItem("lastQuestRefresh")) || 0,
+  animationsEnabled: localStorage.getItem("animationsEnabled") !== "false"
 };
 
-// ============================================
-// UTILITY FUNCTIONS FOR STORAGE
-// ============================================
 function saveCurrencyData() {
-  localStorage.setItem("energy", gameState.energy);
-  localStorage.setItem("coins", gameState.coins);
-  localStorage.setItem("lastEnergyTime", gameState.lastEnergyTime);
+  safeSetLocalStorage("energy", gameState.energy);
+  safeSetLocalStorage("coins", gameState.coins);
+  safeSetLocalStorage("lastEnergyTime", gameState.lastEnergyTime);
   gameState.energyDirty = false;
 }
 
 function savePullData() {
-  localStorage.setItem("pullCount", gameState.pullCount);
-  localStorage.setItem("pityCounter", gameState.pityCounter);
-  localStorage.setItem("pocaCollection", JSON.stringify(gameState.collection));
+  safeSetLocalStorage("pullCount", gameState.pullCount);
+  safeSetLocalStorage("pityCounter", gameState.pityCounter);
+  safeSetLocalStorage("pocaCollection", gameState.collection);
 }
 
 function saveAchievementData() {
-  localStorage.setItem("completedAchievements", JSON.stringify(gameState.completedAchievements));
+  safeSetLocalStorage("completedAchievements", gameState.completedAchievements);
+}
+
+function checkDailyBonus() {
+  const now = Date.now();
+  const lastBonus = gameState.lastDailyBonus;
+  const dayMs = 86400000; // 24 hours
+  
+  if (now - lastBonus > dayMs) {
+    gameState.coins += CONFIG.DAILY_BONUS_COINS;
+    gameState.energy = Math.min(gameState.energy + CONFIG.DAILY_BONUS_ENERGY, CONFIG.MAX_ENERGY);
+    gameState.lastDailyBonus = now;
+    safeSetLocalStorage("lastDailyBonus", now);
+    saveCurrencyData();
+    showNotification(`daily bonus! +${CONFIG.DAILY_BONUS_COINS} coins +${CONFIG.DAILY_BONUS_ENERGY} energy`);
+    return true;
+  }
+  return false;
+}
+
+function getQuestCooldownMinutes() {
+  const now = Date.now();
+  const lastRefresh = gameState.lastQuestRefresh;
+  const timeSinceRefresh = now - lastRefresh;
+  
+  if (timeSinceRefresh >= CONFIG.QUEST_COOLDOWN_MS) {
+    return 0;
+  }
+  
+  const msRemaining = CONFIG.QUEST_COOLDOWN_MS - timeSinceRefresh;
+  return Math.ceil(msRemaining / 60000);
 }
 
 function updateCurrencyDisplay() {
@@ -162,16 +235,23 @@ const STAGE_NAME_ALIASES = {
   "winwin": "Winwin"
 };
 
-// ============================================
-// EVENT LISTENERS & INITIALIZATION
-// ============================================
 function setupEventListeners() {
   UI.pullBtn.addEventListener("click", pullCard);
+  UI.confirmPullBtn.addEventListener("click", executePull);
+  UI.cancelPullBtn.addEventListener("click", () => UI.confirmPullWindow.classList.add("hidden"));
+  
   UI.openDiaryBtn.addEventListener("click", () => {
     UI.diaryWindow.classList.remove("hidden");
+    gameState.diarySearchQuery = "";
+    UI.diarySearch.value = "";
     updateDiary();
   });
   UI.closeDiaryBtn.addEventListener("click", () => UI.diaryWindow.classList.add("hidden"));
+  UI.diarySearch.addEventListener("input", () => {
+    gameState.diarySearchQuery = UI.diarySearch.value.toLowerCase();
+    gameState.currentPage = 0;
+    updateDiary();
+  });
   UI.prevPageBtn.addEventListener("click", () => flipPage(-1));
   UI.nextPageBtn.addEventListener("click", () => flipPage(1));
 
@@ -187,6 +267,17 @@ function setupEventListeners() {
   });
   UI.closeShopBtn.addEventListener("click", () => UI.shopWindow.classList.add("hidden"));
 
+  UI.openSettingsBtn.addEventListener("click", openSettings);
+  UI.closeSettingsBtn.addEventListener("click", () => UI.settingsWindow.classList.add("hidden"));
+  UI.animationToggle.addEventListener("change", () => {
+    gameState.animationsEnabled = UI.animationToggle.checked;
+    safeSetLocalStorage("animationsEnabled", gameState.animationsEnabled);
+  });
+  UI.exportSaveBtn.addEventListener("click", exportSaveData);
+  UI.importSaveBtn.addEventListener("click", () => UI.importFileInput.click());
+  UI.importFileInput.addEventListener("change", handleImportSaveFile);
+  UI.deleteSaveBtn.addEventListener("click", confirmDeleteSaveData);
+
   UI.openMinigamesBtn.addEventListener("click", () => {
     UI.minigameWindow.classList.remove("hidden");
     renderMinigameList();
@@ -198,8 +289,112 @@ function setupEventListeners() {
   });
 }
 
+function showPullConfirmation() {
+  if (!idolDatabase || !idolDatabase.length) {
+    showNotification("loading data... please wait");
+    return;
+  }
+  UI.costDisplay.textContent = CONFIG.ENERGY_COST;
+  UI.confirmPullWindow.classList.remove("hidden");
+}
+
+function executePull() {
+  UI.confirmPullWindow.classList.add("hidden");
+  pullCard();
+}
+
+function openSettings() {
+  UI.animationToggle.checked = gameState.animationsEnabled;
+  
+  const collectionCount = gameState.collection.length;
+  const idolCount = idolDatabase ? idolDatabase.length : 0;
+  UI.saveDataInfo.textContent = `pulls: ${gameState.pullCount}, cards: ${collectionCount}/${idolCount}, coins: ${gameState.coins}`;
+  
+  UI.settingsWindow.classList.remove("hidden");
+}
+
+function exportSaveData() {
+  const saveData = {
+    collection: gameState.collection,
+    pullCount: gameState.pullCount,
+    pityCounter: gameState.pityCounter,
+    coins: gameState.coins,
+    energy: gameState.energy,
+    completedAchievements: gameState.completedAchievements,
+    exportDate: new Date().toISOString()
+  };
+  
+  const dataStr = JSON.stringify(saveData, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `poca-diary-save-${Date.now()}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showNotification("save data exported!");
+}
+
+function handleImportSaveFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const saveData = JSON.parse(e.target.result);
+      
+      if (!saveData.collection || typeof saveData.pullCount !== 'number') {
+        throw new Error('invalid save file format');
+      }
+      
+      gameState.collection = saveData.collection || [];
+      gameState.pullCount = saveData.pullCount || 0;
+      gameState.pityCounter = saveData.pityCounter || 0;
+      gameState.coins = saveData.coins || 0;
+      gameState.energy = saveData.energy || CONFIG.MAX_ENERGY;
+      gameState.completedAchievements = saveData.completedAchievements || [];
+      
+      safeSetLocalStorage("pocaCollection", gameState.collection);
+      safeSetLocalStorage("pullCount", gameState.pullCount);
+      safeSetLocalStorage("pityCounter", gameState.pityCounter);
+      safeSetLocalStorage("coins", gameState.coins);
+      safeSetLocalStorage("energy", gameState.energy);
+      safeSetLocalStorage("completedAchievements", gameState.completedAchievements);
+      
+      updateCurrencyDisplay();
+      updateDiary();
+      showNotification("save data loaded! refresh to apply changes.");
+      
+      UI.importFileInput.value = '';
+    } catch (error) {
+      console.error('Error loading save:', error);
+      showNotification('error loading save file! check format.');
+      UI.importFileInput.value = '';
+    }
+  };
+  
+  reader.readAsText(file);
+}
+
+function confirmDeleteSaveData() {
+  if (confirm("are you sure? this will delete all save data permanently.")) {
+    deleteSaveData();
+  }
+}
+
+function deleteSaveData() {
+  try {
+    localStorage.clear();
+    showNotification("save data deleted. refreshing...");
+    setTimeout(() => location.reload(), 1500);
+  } catch (error) {
+    console.error('Error deleting data:', error);
+    showNotification("error deleting data!");
+  }
+}
+
 function initializeGame() {
-  // Wait for external data to be loaded (with timeout)
   if (typeof idolDatabase === 'undefined' || typeof QUESTS === 'undefined') {
     console.log('Waiting for data files... idolDatabase:', typeof idolDatabase, 'QUESTS:', typeof QUESTS);
     setTimeout(initializeGame, 100);
@@ -211,13 +406,13 @@ function initializeGame() {
   initializeUI();
   setupEventListeners();
   updateCurrencyDisplay();
+  checkDailyBonus();
   updateEnergyRegen();
   setInterval(updateEnergyRegen, 1000);
   
   console.log('Game initialized successfully');
 }
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeGame);
 } else {
@@ -226,7 +421,6 @@ if (document.readyState === 'loading') {
 
 function pullCard() {
   try {
-    // Guard against missing data
     if (!idolDatabase || !idolDatabase.length) {
       showNotification("loading data... please wait");
       return;
@@ -261,7 +455,7 @@ function pullCard() {
     document.getElementById("spotifyLink").classList.add("hidden");
     
     console.log('Pull started for idol:', randomIdol?.stageName);
-    setTimeout(() => displayCard(randomIdol), 800);
+    setTimeout(() => displayCard(randomIdol), CONFIG.PULL_ANIMATION_DURATION);
   } catch (error) {
     console.error('Error in pullCard:', error);
     showNotification('An error occurred. Check console.');
@@ -287,13 +481,14 @@ function displayCard(idol) {
   try {
     UI.card.classList.remove("hidden");
     UI.card.classList.remove("loading");
-    UI.card.classList.add("bounce");
+    
+    if (gameState.animationsEnabled) {
+      UI.card.classList.add("bounce");
+      setTimeout(() => UI.card.classList.remove("bounce"), 500);
+    }
     
     UI.card.classList.remove("rarity-common", "rarity-rare", "rarity-holographic", "rarity-legendary");
-    
-    setTimeout(() => UI.card.classList.remove("bounce"), 500);
 
-    // error handling
     const stageName = idol?.stageName || "Unknown";
     const realName = idol?.realName || "Unknown";
     const group = idol?.group || "Unknown";
@@ -375,6 +570,8 @@ function displayCard(idol) {
 }
 
 function createConfetti() {
+  if (!gameState.animationsEnabled) return;
+  
   const colors = ['#ff4d6d', '#5aa9ff', '#ffd6f5', '#ffb347', '#1DB954'];
   for (let i = 0; i < 12; i++) {
     const confetti = document.createElement('div');
@@ -412,7 +609,6 @@ function normalizeStageName(rawName) {
 }
 
 function updateDiary() {
-  // Guard against missing data
   if (!idolDatabase || !Array.isArray(idolDatabase)) {
     UI.pageLeft.innerHTML = '<div class="empty-diary">loading your collection...</div>';
     return;
@@ -435,13 +631,21 @@ function updateDiary() {
     }
   });
   
-  const uniqueCards = Array.from(uniqueIdols.values()).filter(item =>
+  let uniqueCards = Array.from(uniqueIdols.values()).filter(item =>
     idolDatabase.some(idol => idol.stageName.toLowerCase() === item.title.toLowerCase())
   );
+  
+  if (gameState.diarySearchQuery) {
+    uniqueCards = uniqueCards.filter(item =>
+      item.title.toLowerCase().includes(gameState.diarySearchQuery) ||
+      item.rarity.toLowerCase().includes(gameState.diarySearchQuery)
+    );
+  }
+  
   const totalPages = Math.ceil(uniqueCards.length / CONFIG.DIARY_PER_PAGE) || 1;
   
   if (gameState.currentPage >= totalPages) {
-    gameState.currentPage = totalPages - 1;
+    gameState.currentPage = Math.max(0, totalPages - 1);
   }
   
   const start = gameState.currentPage * CONFIG.DIARY_PER_PAGE;
@@ -452,7 +656,8 @@ function updateDiary() {
   UI.pageRight.innerHTML = "";
 
   UI.collectionCount.textContent = `collection: ${uniqueCards.length}/${idolDatabase.length}`;
-  UI.pageIndicator.textContent = `page ${gameState.currentPage + 1}/${totalPages}`;
+  const pageDisplay = uniqueCards.length === 0 ? '-' : gameState.currentPage + 1;
+  UI.pageIndicator.textContent = `page ${pageDisplay}/${totalPages}`;
 
   pageItems.forEach((item, i) => {
     const { title, rarity } = item;
@@ -469,6 +674,7 @@ function updateDiary() {
     
     const cardSlot = document.createElement("div");
     cardSlot.className = `poca-slot poca-slot-full slot-${rarity}`;
+    cardSlot.style.cursor = "grab";
     
     const img = document.createElement("img");
     img.alt = title;
@@ -476,6 +682,7 @@ function updateDiary() {
     if (idolData.image) {
       img.src = idolData.image;
       img.onerror = function() {
+        console.warn(`Failed to load image for ${title}`);
         this.style.display = 'none';
         const fallback = document.createElement('div');
         fallback.style.cssText = `width: 100%; height: 200px; background: linear-gradient(135deg, ${idolData.color} 0%, ${idolData.color}dd 100%); display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);`;
@@ -502,21 +709,39 @@ function updateDiary() {
   });
 
   if (uniqueCards.length === 0) {
-    UI.pageLeft.innerHTML = '<div class="empty-diary">pull some cards<br>to fill your diary!</div>';
+    const emptyMsg = gameState.diarySearchQuery 
+      ? `no results for "${gameState.diarySearchQuery}"` 
+      : "pull some cards\nto fill your diary!";
+    UI.pageLeft.innerHTML = `<div class="empty-diary">${emptyMsg}</div>`;
   }
 }
 
 function flipPage(direction) {
-  const uniqueIdols = new Set(gameState.collection.map(item => item.split("_")[0]));
-  const totalPages = Math.ceil(uniqueIdols.size / CONFIG.DIARY_PER_PAGE) || 1;
-  
-  gameState.currentPage = (gameState.currentPage + direction + totalPages) % totalPages;
-  
-  const pages = document.querySelector('.pages');
-  pages.classList.add('flipping');
-  setTimeout(() => pages.classList.remove('flipping'), 400);
-  
-  updateDiary();
+  try {
+    const uniqueIdols = new Set(
+      gameState.collection
+        .map(item => item.split("_")[0])
+        .filter(name => {
+          if (!gameState.diarySearchQuery) return true;
+          return name.toLowerCase().includes(gameState.diarySearchQuery);
+        })
+    );
+    
+    const totalPages = Math.ceil(uniqueIdols.size / CONFIG.DIARY_PER_PAGE) || 1;
+    gameState.currentPage = (gameState.currentPage + direction + totalPages) % totalPages;
+    
+    const pages = document.querySelector('.pages');
+    if (pages) {
+      if (gameState.animationsEnabled) {
+        pages.classList.add('flipping');
+        setTimeout(() => pages.classList.remove('flipping'), 400);
+      }
+    }
+    
+    updateDiary();
+  } catch (error) {
+    console.error('Error in flipPage:', error);
+  }
 }
 
 function updateEnergyRegen() {
@@ -531,7 +756,6 @@ function updateEnergyRegen() {
     updateCurrencyDisplay();
   }
   
-  // Only save if dirty flag is set (reduces localStorage writes)
   if (gameState.energyDirty && (energyGain > 0 || timeoutCounter % 10 === 0)) {
     saveCurrencyData();
   }
@@ -611,6 +835,8 @@ function completeAchievement(quest) {
   saveAchievementData();
   
   gameState.coins += quest.reward.coins || 0;
+  gameState.lastQuestRefresh = Date.now();
+  safeSetLocalStorage("lastQuestRefresh", gameState.lastQuestRefresh);
   saveCurrencyData();
   updateCurrencyDisplay();
   
@@ -633,6 +859,14 @@ function renderQuests() {
   }
   
   UI.questContent.innerHTML = "";
+  
+  const cooldownMins = getQuestCooldownMinutes();
+  if (cooldownMins > 0) {
+    const timerEl = document.createElement("div");
+    timerEl.style.cssText = "padding: 10px; background: #fff5f8; border: 2px solid #ff8cc6; border-radius: 3px; margin-bottom: 15px; text-align: center; font-size: 11px;";
+    timerEl.textContent = `next refresh in ${cooldownMins} minute${cooldownMins !== 1 ? 's' : ''}`;
+    UI.questContent.appendChild(timerEl);
+  }
   
   QUESTS.forEach(quest => {
     const isCompleted = gameState.completedAchievements.includes(quest.id);
@@ -1126,7 +1360,7 @@ function handleMemoryFlip(index) {
     renderMemoryGrid();
 
     if (memoryState.deck.every(card => card.matched)) {
-      const reward = Math.max(8, 30 - memoryState.attempts * 2);
+      const reward = Math.max(CONFIG.MEMORY_REWARD_BASE - Math.floor(memoryState.attempts / 2), CONFIG.MEMORY_REWARD_BASE - 22);
       gameState.coins += reward;
       saveCurrencyData();
       updateCurrencyDisplay();
@@ -1143,7 +1377,7 @@ function handleMemoryFlip(index) {
     memoryState.revealed = [];
     memoryState.locked = false;
     renderMemoryGrid();
-  }, 650);
+  }, CONFIG.MEMORY_FLIP_TIMEOUT);
 }
 
 function updateMemoryStatus(message) {
