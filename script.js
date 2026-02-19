@@ -1,57 +1,114 @@
-const pullBtn = document.getElementById("pullBtn");
-const card = document.getElementById("card");
-const idolImage = document.getElementById("idolImage");
-const idolName = document.getElementById("idolName");
-const idolDesc = document.getElementById("idolDesc");
-const rarityText = document.getElementById("rarity");
-const newBadge = document.getElementById("newBadge");
+// ============================================
+// UI ELEMENTS - Initialize on DOM ready
+// ============================================
+let UI = {};
 
-const openDiaryBtn = document.getElementById("openDiaryBtn");
-const diaryWindow = document.getElementById("diaryWindow");
-const pageLeft = document.getElementById("pageLeft");
-const pageRight = document.getElementById("pageRight");
-const prevPageBtn = document.getElementById("prevPageBtn");
-const nextPageBtn = document.getElementById("nextPageBtn");
-const closeDiaryBtn = document.getElementById("closeDiaryBtn");
-const collectionCount = document.getElementById("collectionCount");
-const pageIndicator = document.getElementById("pageIndicator");
+function initializeUI() {
+  UI = {
+    pullBtn: document.getElementById("pullBtn"),
+    card: document.getElementById("card"),
+    idolImage: document.getElementById("idolImage"),
+    idolName: document.getElementById("idolName"),
+    idolDesc: document.getElementById("idolDesc"),
+    rarityText: document.getElementById("rarity"),
+    newBadge: document.getElementById("newBadge"),
+    
+    openDiaryBtn: document.getElementById("openDiaryBtn"),
+    diaryWindow: document.getElementById("diaryWindow"),
+    pageLeft: document.getElementById("pageLeft"),
+    pageRight: document.getElementById("pageRight"),
+    prevPageBtn: document.getElementById("prevPageBtn"),
+    nextPageBtn: document.getElementById("nextPageBtn"),
+    closeDiaryBtn: document.getElementById("closeDiaryBtn"),
+    collectionCount: document.getElementById("collectionCount"),
+    pageIndicator: document.getElementById("pageIndicator"),
+    
+    openQuestsBtn: document.getElementById("openQuestsBtn"),
+    openShopBtn: document.getElementById("openShopBtn"),
+    questWindow: document.getElementById("questWindow"),
+    shopWindow: document.getElementById("shopWindow"),
+    closeQuestsBtn: document.getElementById("closeQuestsBtn"),
+    closeShopBtn: document.getElementById("closeShopBtn"),
+    questContent: document.getElementById("questContent"),
+    shopContent: document.getElementById("shopContent"),
+    questNotification: document.getElementById("questNotification"),
+    rarityStreakEl: document.getElementById("rarityStreak"),
+    
+    openMinigamesBtn: document.getElementById("openMinigamesBtn"),
+    minigameWindow: document.getElementById("minigameWindow"),
+    closeMinigamesBtn: document.getElementById("closeMinigamesBtn"),
+    minigameList: document.getElementById("minigameList"),
+    minigamePlay: document.getElementById("minigamePlay"),
+    
+    energyDisplay: document.getElementById("energyDisplay"),
+    coinDisplay: document.getElementById("coinDisplay")
+  };
+}
 
-const openQuestsBtn = document.getElementById("openQuestsBtn");
-const openShopBtn = document.getElementById("openShopBtn");
-const questWindow = document.getElementById("questWindow");
-const shopWindow = document.getElementById("shopWindow");
-const closeQuestsBtn = document.getElementById("closeQuestsBtn");
-const closeShopBtn = document.getElementById("closeShopBtn");
-const questContent = document.getElementById("questContent");
-const shopContent = document.getElementById("shopContent");
-const questNotification = document.getElementById("questNotification");
-const rarityStreakEl = document.getElementById("rarityStreak");
+// ============================================
+// GAME CONFIG
+// ============================================
+const CONFIG = {
+  ENERGY_COST: 5,
+  ENERGY_REGEN_TIME: 30000,
+  ENERGY_REGEN_AMOUNT: 1,
+  MAX_ENERGY: 50,
+  DIARY_PER_PAGE: 2,
+  PITY_THRESHOLD: 50  // legendary guaranteed after this many pulls
+};
 
-const openMinigamesBtn = document.getElementById("openMinigamesBtn");
-const minigameWindow = document.getElementById("minigameWindow");
-const closeMinigamesBtn = document.getElementById("closeMinigamesBtn");
-const minigameList = document.getElementById("minigameList");
-const minigamePlay = document.getElementById("minigamePlay");
+// Rarity thresholds
+const RARITY_RATES = {
+  COMMON: 0.70,
+  RARE: 0.90,
+  HOLOGRAPHIC: 0.97,
+  LEGENDARY: 1.0
+};
 
-const energyDisplay = document.getElementById("energyDisplay");
-const coinDisplay = document.getElementById("coinDisplay");
+// ============================================
+// GAME STATE
+// ============================================
+const gameState = {
+  collection: JSON.parse(localStorage.getItem("pocaCollection")) || [],
+  pullCount: parseInt(localStorage.getItem("pullCount")) || 0,
+  pityCounter: parseInt(localStorage.getItem("pityCounter")) || 0,
+  lastRarity: null,
+  isPulling: false,
+  currentPage: 0,
+  
+  energy: parseInt(localStorage.getItem("energy")) || CONFIG.MAX_ENERGY,
+  coins: parseInt(localStorage.getItem("coins")) || 0,
+  lastEnergyTime: parseInt(localStorage.getItem("lastEnergyTime")) || Date.now(),
+  energyDirty: false,
+  
+  completedAchievements: JSON.parse(localStorage.getItem("completedAchievements")) || [],
+  lastDailyBonus: parseInt(localStorage.getItem("lastDailyBonus")) || 0
+};
 
-let collection = JSON.parse(localStorage.getItem("pocaCollection")) || [];
-let currentPage = 0;
-let pullCount = parseInt(localStorage.getItem("pullCount")) || 0;
-let lastRarity = null;
-let isPulling = false;
+// ============================================
+// UTILITY FUNCTIONS FOR STORAGE
+// ============================================
+function saveCurrencyData() {
+  localStorage.setItem("energy", gameState.energy);
+  localStorage.setItem("coins", gameState.coins);
+  localStorage.setItem("lastEnergyTime", gameState.lastEnergyTime);
+  gameState.energyDirty = false;
+}
 
-let energy = parseInt(localStorage.getItem("energy")) || 50;
-let maxEnergy = 50;
-let coins = parseInt(localStorage.getItem("coins")) || 0;
-let lastEnergyTime = parseInt(localStorage.getItem("lastEnergyTime")) || Date.now();
+function savePullData() {
+  localStorage.setItem("pullCount", gameState.pullCount);
+  localStorage.setItem("pityCounter", gameState.pityCounter);
+  localStorage.setItem("pocaCollection", JSON.stringify(gameState.collection));
+}
 
-let completedAchievements = JSON.parse(localStorage.getItem("completedAchievements")) || [];
+function saveAchievementData() {
+  localStorage.setItem("completedAchievements", JSON.stringify(gameState.completedAchievements));
+}
 
-const ENERGY_COST = 5;
-const ENERGY_REGEN_TIME = 30000;
-const DIARY_PER_PAGE = 2;
+function updateCurrencyDisplay() {
+  UI.energyDisplay.textContent = `energy: ${gameState.energy}/${CONFIG.MAX_ENERGY}`;
+  UI.coinDisplay.textContent = `coins: ${gameState.coins}`;
+}
 
 const MINIGAMES = [
   {
@@ -105,149 +162,221 @@ const STAGE_NAME_ALIASES = {
   "winwin": "Winwin"
 };
 
-pullBtn.addEventListener("click", pullCard);
-openDiaryBtn.addEventListener("click", () => {
-  diaryWindow.classList.remove("hidden");
-  updateDiary();
-});
-closeDiaryBtn.addEventListener("click", () => diaryWindow.classList.add("hidden"));
-prevPageBtn.addEventListener("click", () => flipPage(-1));
-nextPageBtn.addEventListener("click", () => flipPage(1));
+// ============================================
+// EVENT LISTENERS & INITIALIZATION
+// ============================================
+function setupEventListeners() {
+  UI.pullBtn.addEventListener("click", pullCard);
+  UI.openDiaryBtn.addEventListener("click", () => {
+    UI.diaryWindow.classList.remove("hidden");
+    updateDiary();
+  });
+  UI.closeDiaryBtn.addEventListener("click", () => UI.diaryWindow.classList.add("hidden"));
+  UI.prevPageBtn.addEventListener("click", () => flipPage(-1));
+  UI.nextPageBtn.addEventListener("click", () => flipPage(1));
 
-openQuestsBtn.addEventListener("click", () => {
-  questWindow.classList.remove("hidden");
-  renderQuests();
-});
-closeQuestsBtn.addEventListener("click", () => questWindow.classList.add("hidden"));
+  UI.openQuestsBtn.addEventListener("click", () => {
+    UI.questWindow.classList.remove("hidden");
+    renderQuests();
+  });
+  UI.closeQuestsBtn.addEventListener("click", () => UI.questWindow.classList.add("hidden"));
 
-openShopBtn.addEventListener("click", () => {
-  shopWindow.classList.remove("hidden");
-  renderShop();
-});
-closeShopBtn.addEventListener("click", () => shopWindow.classList.add("hidden"));
+  UI.openShopBtn.addEventListener("click", () => {
+    UI.shopWindow.classList.remove("hidden");
+    renderShop();
+  });
+  UI.closeShopBtn.addEventListener("click", () => UI.shopWindow.classList.add("hidden"));
 
-openMinigamesBtn.addEventListener("click", () => {
-  minigameWindow.classList.remove("hidden");
-  renderMinigameList();
-  selectMinigame(activeMinigameId || MINIGAMES[0].id);
-});
-closeMinigamesBtn.addEventListener("click", () => {
-  cleanupMinigame();
-  minigameWindow.classList.add("hidden");
-});
+  UI.openMinigamesBtn.addEventListener("click", () => {
+    UI.minigameWindow.classList.remove("hidden");
+    renderMinigameList();
+    selectMinigame(activeMinigameId || MINIGAMES[0].id);
+  });
+  UI.closeMinigamesBtn.addEventListener("click", () => {
+    cleanupMinigame();
+    UI.minigameWindow.classList.add("hidden");
+  });
+}
 
-updateCurrencyDisplay();
-updateEnergyRegen();
-setInterval(updateEnergyRegen, 1000);
-
-function pullCard() {
-  if (isPulling) return;
-  if (energy < ENERGY_COST) {
-    showNotification("not enough energy! " + Math.ceil((ENERGY_COST - energy) * 30) + "s");
+function initializeGame() {
+  // Wait for external data to be loaded (with timeout)
+  if (typeof idolDatabase === 'undefined' || typeof QUESTS === 'undefined') {
+    console.log('Waiting for data files... idolDatabase:', typeof idolDatabase, 'QUESTS:', typeof QUESTS);
+    setTimeout(initializeGame, 100);
     return;
   }
   
-  isPulling = true;
-  pullBtn.disabled = true;
+  console.log('Initializing game with', idolDatabase.length, 'idols and', QUESTS.length, 'quests');
   
-  energy -= ENERGY_COST;
-  lastEnergyTime = Date.now();
-  saveCurrencyData();
+  initializeUI();
+  setupEventListeners();
   updateCurrencyDisplay();
+  updateEnergyRegen();
+  setInterval(updateEnergyRegen, 1000);
   
-  const randomIdol = idolDatabase[Math.floor(Math.random() * idolDatabase.length)];
-  
-  pullCount++;
-  localStorage.setItem("pullCount", pullCount);
-  
-  card.classList.remove("hidden");
-  card.classList.add("loading");
-  idolName.textContent = "opening...";
-  idolDesc.textContent = "";
-  rarityText.textContent = "";
-  idolImage.src = "";
-  newBadge.classList.add("hidden");
-  document.getElementById("spotifyLink").classList.add("hidden");
-  
-  setTimeout(() => displayCard(randomIdol), 800);
+  console.log('Game initialized successfully');
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeGame);
+} else {
+  initializeGame();
+}
+
+function pullCard() {
+  try {
+    // Guard against missing data
+    if (!idolDatabase || !idolDatabase.length) {
+      showNotification("loading data... please wait");
+      return;
+    }
+    
+    if (gameState.isPulling) return;
+    if (gameState.energy < CONFIG.ENERGY_COST) {
+      showNotification("not enough energy! " + Math.ceil((CONFIG.ENERGY_COST - gameState.energy) * 30) + "s");
+      return;
+    }
+    
+    gameState.isPulling = true;
+    UI.pullBtn.disabled = true;
+    
+    gameState.energy -= CONFIG.ENERGY_COST;
+    gameState.lastEnergyTime = Date.now();
+    gameState.energyDirty = true;
+    updateCurrencyDisplay();
+    
+    const randomIdol = idolDatabase[Math.floor(Math.random() * idolDatabase.length)];
+    
+    gameState.pullCount++;
+    gameState.pityCounter++;
+    
+    UI.card.classList.remove("hidden");
+    UI.card.classList.add("loading");
+    UI.idolName.textContent = "opening...";
+    UI.idolDesc.textContent = "";
+    UI.rarityText.textContent = "";
+    UI.idolImage.src = "";
+    UI.newBadge.classList.add("hidden");
+    document.getElementById("spotifyLink").classList.add("hidden");
+    
+    console.log('Pull started for idol:', randomIdol?.stageName);
+    setTimeout(() => displayCard(randomIdol), 800);
+  } catch (error) {
+    console.error('Error in pullCard:', error);
+    showNotification('An error occurred. Check console.');
+    gameState.isPulling = false;
+    UI.pullBtn.disabled = false;
+  }
 }
 
 function rollRarity() {
+  if (gameState.pityCounter >= CONFIG.PITY_THRESHOLD) {
+    gameState.pityCounter = 0;
+    return "legendary";
+  }
+  
   const roll = Math.random();
-  if (roll <= 0.7) return "common";
-  if (roll <= 0.9) return "rare";
-  if (roll <= 0.97) return "holographic";
+  if (roll <= RARITY_RATES.COMMON) return "common";
+  if (roll <= RARITY_RATES.RARE) return "rare";
+  if (roll <= RARITY_RATES.HOLOGRAPHIC) return "holographic";
   return "legendary";
 }
 
 function displayCard(idol) {
-  card.classList.remove("hidden");
-  card.classList.remove("loading");
-  card.classList.add("bounce");
-  
-  card.classList.remove("rarity-common", "rarity-rare", "rarity-holographic", "rarity-legendary");
-  
-  setTimeout(() => card.classList.remove("bounce"), 500);
+  try {
+    UI.card.classList.remove("hidden");
+    UI.card.classList.remove("loading");
+    UI.card.classList.add("bounce");
+    
+    UI.card.classList.remove("rarity-common", "rarity-rare", "rarity-holographic", "rarity-legendary");
+    
+    setTimeout(() => UI.card.classList.remove("bounce"), 500);
 
-  idolName.textContent = idol.stageName;
-  
-  const birthDate = new Date(idol.birthday);
-  const formattedBirthday = birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  
-  idolDesc.innerHTML = `<div style="line-height: 1.6;">${idol.realName}<br>group: ${idol.group}<br>born: ${formattedBirthday}</div>`;
+    // error handling
+    const stageName = idol?.stageName || "Unknown";
+    const realName = idol?.realName || "Unknown";
+    const group = idol?.group || "Unknown";
+    const birthday = idol?.birthday || "2000-01-01";
+    const color = idol?.color || "#9e9e9e";
+    const image = idol?.image || "";
 
-  let rarity = rollRarity();
-  rarityText.textContent = rarity;
-  card.classList.add(`rarity-${rarity}`);
-  
-  if (rarity === 'legendary') {
-    showRarityMessage(rarity);
+    UI.idolName.textContent = stageName;
+    
+    const birthDate = new Date(birthday);
+    const formattedBirthday = !Number.isNaN(birthDate.getTime())
+      ? birthDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : birthday;
+    
+    UI.idolDesc.innerHTML = `<div style="line-height: 1.6;">${realName}<br>group: ${group}<br>born: ${formattedBirthday}</div>`;
+
+    let rarity = rollRarity();
+    
+    if (rarity === 'legendary') {
+      gameState.pityCounter = 0;
+    }
+    
+    UI.rarityText.textContent = rarity;
+    UI.card.classList.add(`rarity-${rarity}`);
+    
+    if (rarity === 'legendary') {
+      showRarityMessage(rarity);
+    }
+    
+    gameState.lastRarity = rarity;
+
+    const cardID = stageName + "_" + rarity;
+
+    if (!gameState.collection.includes(cardID)) {
+      UI.newBadge.classList.remove("hidden");
+      gameState.collection.push(cardID);
+      createConfetti();
+    } else {
+      UI.newBadge.classList.add("hidden");
+    }
+
+    const imageSection = UI.card.querySelector('.card-image-section');
+    UI.idolImage.src = "";
+    UI.idolImage.alt = stageName;
+    UI.idolImage.style.display = "none";
+
+    imageSection.style.background = `linear-gradient(135deg, ${color} 0%, ${color}dd 100%)`;
+
+    let fallbackName = imageSection.querySelector('.card-fallback-name');
+    if (!fallbackName) {
+      fallbackName = document.createElement('div');
+      fallbackName.className = 'card-fallback-name';
+      imageSection.appendChild(fallbackName);
+    }
+
+    fallbackName.textContent = stageName;
+
+    const spotifyLink = document.getElementById("spotifyLink");
+    spotifyLink.href = `https://open.spotify.com/search/${encodeURIComponent(stageName + " " + group)}`;
+    spotifyLink.classList.remove("hidden");
+
+    checkAchievements(rarity, idol);
+    
+    savePullData();
+    saveCurrencyData();
+    
+    updateDiary();
+    
+    console.log('Card displayed for:', stageName, 'Rarity:', rarity);
+    
+    gameState.isPulling = false;
+    UI.pullBtn.disabled = false;
+  } catch (error) {
+    console.error('Error in displayCard:', error);
+    showNotification('An error occurred. Check console.');
+    gameState.isPulling = false;
+    UI.pullBtn.disabled = false;
   }
-  
-  lastRarity = rarity;
-
-  const cardID = idol.stageName + "_" + rarity;
-
-  if (!collection.includes(cardID)) {
-    newBadge.classList.remove("hidden");
-    collection.push(cardID);
-    localStorage.setItem("pocaCollection", JSON.stringify(collection));
-    createConfetti();
-  } else {
-    newBadge.classList.add("hidden");
-  }
-
-  const imageSection = card.querySelector('.card-image-section');
-  idolImage.src = "";
-  idolImage.alt = idol.stageName;
-  idolImage.style.display = "none";
-
-  imageSection.style.background = `linear-gradient(135deg, ${idol.color} 0%, ${idol.color}dd 100%)`;
-
-  let fallbackName = imageSection.querySelector('.card-fallback-name');
-  if (!fallbackName) {
-    fallbackName = document.createElement('div');
-    fallbackName.className = 'card-fallback-name';
-    imageSection.appendChild(fallbackName);
-  }
-
-  fallbackName.textContent = idol.stageName;
-
-  const spotifyLink = document.getElementById("spotifyLink");
-  spotifyLink.href = `https://open.spotify.com/search/${encodeURIComponent(idol.stageName + " " + idol.group)}`;
-  spotifyLink.classList.remove("hidden");
-
-  checkAchievements(rarity, idol);
-  
-  updateDiary();
-  
-  isPulling = false;
-  pullBtn.disabled = false;
 }
 
 function createConfetti() {
   const colors = ['#ff4d6d', '#5aa9ff', '#ffd6f5', '#ffb347', '#1DB954'];
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 12; i++) {
     const confetti = document.createElement('div');
     confetti.className = 'confetti';
     confetti.style.left = Math.random() * 100 + '%';
@@ -264,15 +393,15 @@ function showRarityMessage(rarity) {
     'legendary': '★★★ legendary pull! ★★★'
   };
 
-  if (!rarityStreakEl) {
+  if (!UI.rarityStreakEl) {
     return;
   }
 
-  rarityStreakEl.textContent = messages[rarity] || '';
-  rarityStreakEl.classList.remove('hidden');
+  UI.rarityStreakEl.textContent = messages[rarity] || '';
+  UI.rarityStreakEl.classList.remove('hidden');
 
   setTimeout(() => {
-    rarityStreakEl.classList.add('hidden');
+    UI.rarityStreakEl.classList.add('hidden');
   }, 3000);
 }
 
@@ -283,10 +412,16 @@ function normalizeStageName(rawName) {
 }
 
 function updateDiary() {
+  // Guard against missing data
+  if (!idolDatabase || !Array.isArray(idolDatabase)) {
+    UI.pageLeft.innerHTML = '<div class="empty-diary">loading your collection...</div>';
+    return;
+  }
+  
   const uniqueIdols = new Map();
   const rarityOrder = ['legendary', 'holographic', 'rare', 'common'];
 
-  collection.forEach(item => {
+  gameState.collection.forEach(item => {
     const [rawTitle, rawRarity] = item.split("_");
     const rarity = rawRarity === "fancam" ? "legendary" : rawRarity;
     const title = normalizeStageName(rawTitle);
@@ -303,21 +438,21 @@ function updateDiary() {
   const uniqueCards = Array.from(uniqueIdols.values()).filter(item =>
     idolDatabase.some(idol => idol.stageName.toLowerCase() === item.title.toLowerCase())
   );
-  const totalPages = Math.ceil(uniqueCards.length / DIARY_PER_PAGE) || 1;
+  const totalPages = Math.ceil(uniqueCards.length / CONFIG.DIARY_PER_PAGE) || 1;
   
-  if (currentPage >= totalPages) {
-    currentPage = totalPages - 1;
+  if (gameState.currentPage >= totalPages) {
+    gameState.currentPage = totalPages - 1;
   }
   
-  const start = currentPage * DIARY_PER_PAGE;
-  const end = start + DIARY_PER_PAGE;
+  const start = gameState.currentPage * CONFIG.DIARY_PER_PAGE;
+  const end = start + CONFIG.DIARY_PER_PAGE;
   const pageItems = uniqueCards.slice(start, end);
 
-  pageLeft.innerHTML = "";
-  pageRight.innerHTML = "";
+  UI.pageLeft.innerHTML = "";
+  UI.pageRight.innerHTML = "";
 
-  collectionCount.textContent = `collection: ${uniqueCards.length}/${idolDatabase.length}`;
-  pageIndicator.textContent = `page ${currentPage + 1}/${totalPages}`;
+  UI.collectionCount.textContent = `collection: ${uniqueCards.length}/${idolDatabase.length}`;
+  UI.pageIndicator.textContent = `page ${gameState.currentPage + 1}/${totalPages}`;
 
   pageItems.forEach((item, i) => {
     const { title, rarity } = item;
@@ -362,20 +497,20 @@ function updateDiary() {
     cardSlot.appendChild(img);
     cardSlot.appendChild(info);
     
-    const container = i === 0 ? pageLeft : pageRight;
+    const container = i === 0 ? UI.pageLeft : UI.pageRight;
     container.appendChild(cardSlot);
   });
 
   if (uniqueCards.length === 0) {
-    pageLeft.innerHTML = '<div class="empty-diary">pull some cards<br>to fill your diary!</div>';
+    UI.pageLeft.innerHTML = '<div class="empty-diary">pull some cards<br>to fill your diary!</div>';
   }
 }
 
 function flipPage(direction) {
-  const uniqueIdols = new Set(collection.map(item => item.split("_")[0]));
-  const totalPages = Math.ceil(uniqueIdols.size / DIARY_PER_PAGE) || 1;
+  const uniqueIdols = new Set(gameState.collection.map(item => item.split("_")[0]));
+  const totalPages = Math.ceil(uniqueIdols.size / CONFIG.DIARY_PER_PAGE) || 1;
   
-  currentPage = (currentPage + direction + totalPages) % totalPages;
+  gameState.currentPage = (gameState.currentPage + direction + totalPages) % totalPages;
   
   const pages = document.querySelector('.pages');
   pages.classList.add('flipping');
@@ -384,28 +519,42 @@ function flipPage(direction) {
   updateDiary();
 }
 
-function updateCurrencyDisplay() {
-  energyDisplay.textContent = `energy: ${energy}/${maxEnergy}`;
-  coinDisplay.textContent = `coins: ${coins}`;
-}
-
-function saveCurrencyData() {
-  localStorage.setItem("energy", energy);
-  localStorage.setItem("coins", coins);
-  localStorage.setItem("lastEnergyTime", lastEnergyTime);
-}
-
 function updateEnergyRegen() {
   const currentTime = Date.now();
-  const timeDelta = currentTime - lastEnergyTime;
-  const energyGain = Math.floor(timeDelta / ENERGY_REGEN_TIME);
+  const timeDelta = currentTime - gameState.lastEnergyTime;
+  const energyGain = Math.floor(timeDelta / CONFIG.ENERGY_REGEN_TIME);
   
-  if (energyGain > 0 && energy < maxEnergy) {
-    energy = Math.min(energy + energyGain, maxEnergy);
-    lastEnergyTime = currentTime;
-    saveCurrencyData();
+  if (energyGain > 0 && gameState.energy < CONFIG.MAX_ENERGY) {
+    gameState.energy = Math.min(gameState.energy + energyGain, CONFIG.MAX_ENERGY);
+    gameState.lastEnergyTime = currentTime;
+    gameState.energyDirty = true;
     updateCurrencyDisplay();
   }
+  
+  // Only save if dirty flag is set (reduces localStorage writes)
+  if (gameState.energyDirty && (energyGain > 0 || timeoutCounter % 10 === 0)) {
+    saveCurrencyData();
+  }
+}
+
+let timeoutCounter = 0;
+setInterval(() => { timeoutCounter++; }, 1000);
+
+function showRarityMessage(rarity) {
+  const messages = {
+    'legendary': '★★★ legendary pull! ★★★'
+  };
+
+  if (!UI.rarityStreakEl) {
+    return;
+  }
+
+  UI.rarityStreakEl.textContent = messages[rarity] || '';
+  UI.rarityStreakEl.classList.remove('hidden');
+
+  setTimeout(() => {
+    UI.rarityStreakEl.classList.add('hidden');
+  }, 3000);
 }
 
 function isIdolInQuestGroup(member, quest) {
@@ -417,20 +566,18 @@ function isIdolInQuestGroup(member, quest) {
 }
 
 function checkAchievements(rarity, idol) {
-  // Check milestone achievements
   const completedMilestones = QUESTS.filter(q => 
-    q.type === "milestone" && !completedAchievements.includes(q.id)
+    q.type === "milestone" && !gameState.completedAchievements.includes(q.id)
   );
   
   completedMilestones.forEach(quest => {
-    if (pullCount >= quest.target) {
+    if (gameState.pullCount >= quest.target) {
       completeAchievement(quest);
     }
   });
   
-  // Check rarity achievements
   const completedRarities = QUESTS.filter(q => 
-    q.type === "rarity" && !completedAchievements.includes(q.id)
+    q.type === "rarity" && !gameState.completedAchievements.includes(q.id)
   );
   
   completedRarities.forEach(quest => {
@@ -440,31 +587,30 @@ function checkAchievements(rarity, idol) {
   });
   
   const completedCollections = QUESTS.filter(q => 
-    q.type === "collection" && !completedAchievements.includes(q.id)
+    q.type === "collection" && !gameState.completedAchievements.includes(q.id)
   );
   
   completedCollections.forEach(quest => {
     const groupMembers = idolDatabase.filter(member => isIdolInQuestGroup(member, quest));
     const collectedMembers = groupMembers.filter(member => 
-      collection.some(card => card.startsWith(member.stageName))
+      gameState.collection.some(card => card.startsWith(member.stageName))
     );
     if (collectedMembers.length === groupMembers.length) {
       completeAchievement(quest);
     }
   });
   
-  // Check special achievements
-  const luckyQuest = QUESTS.find(q => q.id === "lucky-7" && !completedAchievements.includes(q.id));
-  if (luckyQuest && pullCount === 7) {
+  const luckyQuest = QUESTS.find(q => q.id === "lucky-7" && !gameState.completedAchievements.includes(q.id));
+  if (luckyQuest && gameState.pullCount === 7) {
     completeAchievement(luckyQuest);
   }
 }
 
 function completeAchievement(quest) {
-  completedAchievements.push(quest.id);
-  localStorage.setItem("completedAchievements", JSON.stringify(completedAchievements));
+  gameState.completedAchievements.push(quest.id);
+  saveAchievementData();
   
-  coins += quest.reward.coins || 0;
+  gameState.coins += quest.reward.coins || 0;
   saveCurrencyData();
   updateCurrencyDisplay();
   
@@ -472,25 +618,30 @@ function completeAchievement(quest) {
 }
 
 function showNotification(message) {
-  questNotification.textContent = message;
-  questNotification.style.opacity = "1";
+  UI.questNotification.textContent = message;
+  UI.questNotification.style.opacity = "1";
   
   setTimeout(() => {
-    questNotification.style.opacity = "0";
+    UI.questNotification.style.opacity = "0";
   }, 4000);
 }
 
 function renderQuests() {
-  questContent.innerHTML = "";
+  if (!QUESTS || !Array.isArray(QUESTS)) {
+    UI.questContent.innerHTML = '<div style="padding: 20px;">Loading quests...</div>';
+    return;
+  }
+  
+  UI.questContent.innerHTML = "";
   
   QUESTS.forEach(quest => {
-    const isCompleted = completedAchievements.includes(quest.id);
+    const isCompleted = gameState.completedAchievements.includes(quest.id);
     const questEl = document.createElement("div");
     questEl.className = `quest-item ${isCompleted ? "completed" : ""}`;
     
     let progress = "";
     if (quest.type === "milestone") {
-      const current = Math.min(pullCount, quest.target);
+      const current = Math.min(gameState.pullCount, quest.target);
       const percent = Math.floor((current / quest.target) * 100);
       progress = `<div class="progress-bar"><div class="progress-fill" style="width: ${percent}%"></div></div><div class="progress-text">${current}/${quest.target}</div>`;
     }
@@ -506,7 +657,7 @@ function renderQuests() {
       </div>
     `;
     
-    questContent.appendChild(questEl);
+    UI.questContent.appendChild(questEl);
   });
 }
 
@@ -539,7 +690,7 @@ const SHOP_ITEMS = [
   }
 ];
 
-let lastDailyBonus = localStorage.getItem("lastDailyBonus") || 0;
+
 
 let activeMinigameId = null;
 let beatIntervalId = null;
@@ -550,7 +701,7 @@ let memoryState = null;
 let memoryTimeoutId = null;
 
 function renderShop() {
-  shopContent.innerHTML = "";
+  UI.shopContent.innerHTML = "";
   
   SHOP_ITEMS.forEach(item => {
     const shopItem = document.createElement("div");
@@ -562,17 +713,17 @@ function renderShop() {
     if (item.id === "bonus-coins") {
       const now = Date.now();
       const today = Math.floor(now / (24 * 60 * 60 * 1000));
-      const lastDay = Math.floor(lastDailyBonus / (24 * 60 * 60 * 1000));
+      const lastDay = Math.floor(gameState.lastDailyBonus / (24 * 60 * 60 * 1000));
       
       if (today === lastDay) {
         buyBtn = '<button class="shop-button" disabled>claimed</button>';
         costDisplay = '<div class="shop-cost">back tomorrow</div>';
       }
-    } else if (item.effect === "buy_energy" && energy >= maxEnergy) {
+    } else if (item.effect === "buy_energy" && gameState.energy >= CONFIG.MAX_ENERGY) {
       buyBtn = '<button class="shop-button" disabled>full</button>';
       costDisplay = '<div class="shop-cost">energy maxed</div>';
     } else {
-      const hasEnough = coins >= item.cost;
+      const hasEnough = gameState.coins >= item.cost;
       if (!hasEnough) {
         buyBtn = '<button class="shop-button" disabled>cant buy</button>';
       }
@@ -585,7 +736,7 @@ function renderShop() {
       ${buyBtn}
     `;
     
-    shopContent.appendChild(shopItem);
+    UI.shopContent.appendChild(shopItem);
   });
 }
 
@@ -593,27 +744,26 @@ function buyItem(itemId) {
   const item = SHOP_ITEMS.find(i => i.id === itemId);
   if (!item) return;
 
-  if (item.effect === "buy_energy" && energy >= maxEnergy) {
+  if (item.effect === "buy_energy" && gameState.energy >= CONFIG.MAX_ENERGY) {
     showNotification("energy already full");
     return;
   }
   
-  if (item.currency === "coins" && coins < item.cost) {
+  if (item.currency === "coins" && gameState.coins < item.cost) {
     showNotification("not enough coins");
     return;
   }
   
-  if (item.currency === "coins") coins -= item.cost;
+  if (item.currency === "coins") gameState.coins -= item.cost;
   
   switch(item.effect) {
     case "buy_energy":
-      energy = Math.min(energy + item.amount, maxEnergy);
+      gameState.energy = Math.min(gameState.energy + item.amount, CONFIG.MAX_ENERGY);
       showNotification(`bought ${item.amount} energy`);
       break;
     case "daily_bonus":
-      coins += 100;
-      lastDailyBonus = Date.now();
-      localStorage.setItem("lastDailyBonus", lastDailyBonus);
+      gameState.coins += 100;
+      gameState.lastDailyBonus = Date.now();
       showNotification("claimed 100 coins");
       break;
   }
@@ -624,7 +774,7 @@ function buyItem(itemId) {
 }
 
 function renderMinigameList() {
-  minigameList.innerHTML = "";
+  UI.minigameList.innerHTML = "";
 
   MINIGAMES.forEach(game => {
     const btn = document.createElement("button");
@@ -635,7 +785,7 @@ function renderMinigameList() {
       <div class="minigame-cost">cost: ${game.cost} energy</div>
     `;
     btn.addEventListener("click", () => selectMinigame(game.id));
-    minigameList.appendChild(btn);
+    UI.minigameList.appendChild(btn);
   });
 }
 
@@ -673,7 +823,7 @@ function cleanupMinigame() {
 }
 
 function renderBeatDrop() {
-  minigamePlay.innerHTML = `
+  UI.minigamePlay.innerHTML = `
     <div class="minigame-title">beat drop</div>
     <div class="minigame-subtitle">stop the marker inside the spotlight zone to earn coins.</div>
     <div class="beat-meter">
@@ -699,12 +849,13 @@ function renderBeatDrop() {
   beatStartBtn.addEventListener("click", () => {
     if (beatIntervalId) return;
     const cost = MINIGAMES.find(game => game.id === "beat-drop").cost;
-    if (energy < cost) {
+    if (gameState.energy < cost) {
       showNotification("not enough energy");
       return;
     }
 
-    energy -= cost;
+    gameState.energy -= cost;
+    gameState.energyDirty = true;
     saveCurrencyData();
     updateCurrencyDisplay();
 
@@ -738,7 +889,7 @@ function renderBeatDrop() {
     beatResult.textContent = `${reward.label} (+${reward.coins} coins)`;
 
     if (reward.coins > 0) {
-      coins += reward.coins;
+      gameState.coins += reward.coins;
       saveCurrencyData();
       updateCurrencyDisplay();
     }
@@ -753,7 +904,7 @@ function getBeatReward(distance) {
 }
 
 function renderLyricScramble() {
-  minigamePlay.innerHTML = `
+  UI.minigamePlay.innerHTML = `
     <div class="minigame-title">lyric scramble</div>
     <div class="minigame-subtitle">tap words to rebuild the line.</div>
     <div class="scramble-actions">
@@ -786,12 +937,13 @@ function renderLyricScramble() {
 
 function startScrambleRound() {
   const cost = MINIGAMES.find(game => game.id === "lyric-scramble").cost;
-  if (energy < cost) {
+  if (gameState.energy < cost) {
     showNotification("not enough energy");
     return;
   }
 
-  energy -= cost;
+  gameState.energy -= cost;
+  gameState.energyDirty = true;
   saveCurrencyData();
   updateCurrencyDisplay();
 
@@ -863,7 +1015,7 @@ function checkScrambleAnswer() {
 
   if (answerText === scrambleState.phrase) {
     scrambleState.solved = true;
-    coins += 20;
+    gameState.coins += 20;
     saveCurrencyData();
     updateCurrencyDisplay();
     scrambleResult.textContent = "clean line! +20 coins";
@@ -881,7 +1033,7 @@ function shuffleArray(array) {
 }
 
 function renderMemoryStage() {
-  minigamePlay.innerHTML = `
+  UI.minigamePlay.innerHTML = `
     <div class="minigame-title">memory stage</div>
     <div class="minigame-subtitle">match all pairs.</div>
     <div class="memory-actions">
@@ -897,12 +1049,13 @@ function renderMemoryStage() {
 
 function startMemoryRound() {
   const cost = MINIGAMES.find(game => game.id === "memory-stage").cost;
-  if (energy < cost) {
+  if (gameState.energy < cost) {
     showNotification("not enough energy");
     return;
   }
 
-  energy -= cost;
+  gameState.energy -= cost;
+  gameState.energyDirty = true;
   saveCurrencyData();
   updateCurrencyDisplay();
 
@@ -974,7 +1127,7 @@ function handleMemoryFlip(index) {
 
     if (memoryState.deck.every(card => card.matched)) {
       const reward = Math.max(8, 30 - memoryState.attempts * 2);
-      coins += reward;
+      gameState.coins += reward;
       saveCurrencyData();
       updateCurrencyDisplay();
       updateMemoryStatus(`stage cleared! +${reward} coins`);
