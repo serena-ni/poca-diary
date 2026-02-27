@@ -7,9 +7,7 @@ a little log of "photocards" (images of idols found online) consolidated
 ## how to play
 
 - click **"✦ open album ✦"** to pull a random photocard
-- rare pulls (fancam/legendary) display special messages
-- open your diary to view your collection - **ONE photocard per page!**
-- navigate between pages to see all collected cards
+- open your diary to view your collection and navigate between pages to see all cards
 
 
 
